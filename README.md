@@ -8,9 +8,9 @@ Live at: [heeditz.github.io/rbxui](https://heeditz.github.io/rbxui)
 
 ## How it works
 
-You place UI elements onto a canvas that represents a Roblox ScreenGui. Every change you make, whether moving, resizing, recoloring, or adding modifiers, instantly updates the Luau code on the right panel. When you are done, you copy the code and paste it directly into a LocalScript, a Script, or your executor.
+You place UI elements onto a canvas that represents a Roblox ScreenGui. Every change you make, whether moving, resizing, recoloring, or adding modifiers, instantly updates the Luau code on the right panel. When you are done, you copy the code or download it as a `.lua` file and paste it directly into a LocalScript, a Script, or your executor.
 
-The canvas is 480x320 by default but can be resized to match any resolution you are targeting. All sizes and positions are converted to UDim2 scale values relative to your canvas dimensions, so the output is resolution-independent.
+All sizes and positions are stored as full UDim2 values with both scale and offset components. Scale is the default so layouts work across different screen sizes. You can override any value manually for pixel-perfect control or to express things like full screen (`1, 0, 1, 0`) or centered with a fixed height (`0.5, -80, 0, 36`).
 
 ---
 
@@ -49,8 +49,8 @@ Modifiers are child instances that change the appearance or behavior of their pa
 
 | Modifier | What it does |
 |---|---|
-| UICorner | Rounds the corners of an element. Configurable by pixel offset or scale. |
-| UIStroke | Adds an outline or inner border. Configurable color, thickness, transparency, and join mode. |
+| UICorner | Rounds the corners of an element. Configurable by pixel offset and scale. |
+| UIStroke | Adds an outline or inner border. Configurable color, thickness, transparency, mode, and join mode. |
 | UIPadding | Adds internal padding on all four sides independently. |
 | UIGradient | Applies a color or transparency gradient. Configurable start/end color, rotation, and per-side transparency. |
 | UIScale | Scales an element up or down without changing its Size property. |
@@ -87,13 +87,37 @@ Constraints enforce rules on an element's size or text size regardless of its pa
 
 When an element is selected, its properties appear in the right panel under four tabs.
 
-**Basic** -- Name, parent, size, position, background color, background transparency, and any media asset IDs.
+**Basic** -- Name, parent, Size (XScale, XOffset, YScale, YOffset), Position (XScale, XOffset, YScale, YOffset), background color, background transparency, and any media asset IDs.
 
 **Text** -- Text content, text color, font size, font family, and alignment. Only visible for TextLabel, TextButton, and TextBox.
 
 **Mods** -- All modifiers attached to the selected element with their individual settings. Each modifier can be removed from here.
 
 **Adv** -- ZIndex, AnchorPoint, and Visible toggle. ScrollingFrame also exposes scroll bar thickness and canvas size here.
+
+---
+
+## Size and position
+
+Size and Position both use full UDim2 format with four fields each.
+
+```
+XScale, XOffset, YScale, YOffset
+```
+
+Scale values are relative to the parent size. Offset values are in pixels. They combine at runtime so you can mix both in the same value.
+
+Common patterns:
+
+| Intent | Size | Position |
+|---|---|---|
+| Full screen | 1, 0, 1, 0 | 0, 0, 0, 0 |
+| Centered element | 0.4, 0, 0.3, 0 | 0.5, 0, 0.5, 0 (with AnchorPoint 0.5, 0.5) |
+| Full width, fixed height | 1, 0, 0, 48 | 0, 0, 0, 0 |
+| Full width minus padding | 1, -20, 0, 40 | 0, 10, 0, 8 |
+| Right-aligned fixed size | 0, 120, 0, 36 | 1, -130, 0, 8 (with AnchorPoint 0, 0) |
+
+When you drag or resize on the canvas, the scale fields update automatically with offset staying at 0. If you type into the fields directly, the canvas preview repositions to match using `scale * canvasSize + offset`.
 
 ---
 
@@ -125,7 +149,7 @@ The canvas toolbar at the bottom has width and height inputs. You can type any r
 | 720p | 1280 x 720 |
 | 1080p | 1920 x 1080 |
 
-All UDim2 scale values in the generated code are calculated relative to the canvas size you set, so switching to 1080p and building there will produce correctly scaled output for a 1080p screen.
+Changing the canvas size does not affect UDim2 scale values. Scale is always relative to the parent at runtime. The canvas is just a preview surface.
 
 ---
 
@@ -142,6 +166,28 @@ Click the ScreenGui Settings section at the bottom of the code panel to expand i
 
 ---
 
+## Save and load
+
+Your project can be saved to the browser at any time. The save stores all elements, all properties, all modifier values, ScreenGui settings, and the canvas size.
+
+- **Save** -- Writes to browser storage. Shortcut: Ctrl+S.
+- **Load** -- Reads the last manual save back into the editor.
+- **Autosave** -- Every change is written to a separate autosave slot automatically. If you close or refresh the tab without saving, a restore prompt appears the next time you open the tool.
+
+The dot next to the element counter in the header turns grey when you have unsaved changes and green after a save.
+
+---
+
+## Code output
+
+The generated Luau is valid and self-contained. It creates the ScreenGui, all elements, and all modifiers in one block. Each element is declared as a local variable. Modifiers are declared as locals prefixed with an underscore and the modifier type, for example `_UICorner_MainFrame`.
+
+Use the Copy button to copy to clipboard or the Download button to save directly as a `.lua` file named after your ScreenGui.
+
+The output is ready to paste into a LocalScript under StarterGui, directly into an executor, or into any script context depending on the parent you selected.
+
+---
+
 ## Keyboard shortcuts
 
 | Key | Action |
@@ -153,16 +199,9 @@ Click the ScreenGui Settings section at the bottom of the code panel to expand i
 | Del | Delete selected element |
 | Ctrl+D | Duplicate selected element |
 | Ctrl+Z | Undo |
+| Ctrl+S | Save project |
 
 Shortcuts are disabled while any input field is focused so they do not interfere with typing.
-
----
-
-## Code output
-
-The generated Luau is valid and self-contained. It creates the ScreenGui, all elements, and all modifiers in one block. Each element is declared as a local variable. Modifiers are declared as locals prefixed with an underscore and the modifier type, for example `_UICorner_MainFrame`.
-
-The output is ready to paste into a LocalScript under StarterGui, directly into an executor, or into any script context depending on the parent you selected.
 
 ---
 
