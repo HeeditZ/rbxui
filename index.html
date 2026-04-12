@@ -63,8 +63,10 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
 .rbe.sel{outline:2px solid var(--accent)!important;outline-offset:1px}
 .rbe .rh{position:absolute;bottom:-5px;right:-5px;width:10px;height:10px;background:var(--accent);border-radius:2px;cursor:se-resize;z-index:20;border:1px solid rgba(255,255,255,.3)}
 
-#right{width:300px;background:var(--bg1);border-left:1px solid var(--bdr);display:flex;flex-direction:column;flex-shrink:0;transition:width .18s,opacity .18s}
-#right.hidden{width:0;opacity:0;pointer-events:none;border-left:none}
+#right{width:300px;min-width:180px;max-width:600px;background:var(--bg1);border-left:1px solid var(--bdr);display:flex;flex-direction:column;flex-shrink:0;position:relative}
+#right.hidden{width:0!important;opacity:0;pointer-events:none;border-left:none}
+#right-resize{position:absolute;left:-3px;top:0;bottom:0;width:6px;cursor:col-resize;z-index:10;background:transparent}
+#right-resize:hover,#right-resize.dragging{background:var(--accent);opacity:.5}
 #chdr{height:34px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--bdr);gap:6px;flex-shrink:0}
 #chdr span{font-size:12px;font-weight:500;color:var(--t2)}
 .lpill{font-size:10px;color:var(--accent);font-family:'JetBrains Mono',monospace;background:var(--adim);padding:2px 7px;border-radius:4px}
@@ -220,6 +222,9 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
     <div class="tsep"></div>
     <button class="tbtn" title="Bring forward" onclick="reorder(1)"><i class="ti ti-stack-forward"></i></button>
     <button class="tbtn" title="Send backward" onclick="reorder(-1)"><i class="ti ti-stack-back"></i></button>
+    <div class="tsep"></div>
+    <button class="tbtn" id="tb-snap" title="Toggle snap to grid (G)" onclick="toggleSnap()"><i class="ti ti-magnet"></i></button>
+    <input type="number" id="snap-size" value="8" min="1" max="64" title="Grid size" style="width:34px;background:var(--bg2);border:1px solid var(--bdr2);border-radius:4px;padding:2px 4px;color:var(--t2);font-size:11px;font-family:'JetBrains Mono',monospace;outline:none">
     <span id="zlbl">480 x 320</span>
   </div>
   <div id="cscroll">
@@ -248,6 +253,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
 </div>
 
 <div id="right">
+  <div id="right-resize"></div>
   <div id="chdr">
     <i class="ti ti-code" style="font-size:14px;color:var(--t3)"></i>
     <span>Generated Luau</span>
@@ -311,7 +317,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
 </div>
 
 <script>
-let els=[], sel=null, zc=10, hist=[], dragType=null, proptab='basic', codeVisible=true;
+let els=[], sel=null, multiSel=new Set(), zc=10, hist=[], dragType=null, proptab='basic', codeVisible=true, snapOn=false;
 
 const CV=document.getElementById('canvas');
 const COUT=document.getElementById('cout');
@@ -370,8 +376,13 @@ function toggleCode(){
   codeVisible=!codeVisible;
   const r=document.getElementById('right');
   const btn=document.getElementById('code-tog');
-  if(codeVisible){r.classList.remove('hidden');btn.classList.remove('on');}
-  else{r.classList.add('hidden');btn.classList.add('on');}
+  if(codeVisible){
+    r.classList.remove('hidden');
+    btn.classList.remove('on');
+  } else {
+    r.classList.add('hidden');
+    btn.classList.add('on');
+  }
 }
 
 function ds(e,t){dragType=t;e.dataTransfer.effectAllowed='copy';}
@@ -429,7 +440,7 @@ function render(){
 
   [...els].sort((a,b)=>a.z-b.z).forEach(el=>{
     const d=document.createElement('div');
-    d.className='rbe'+(el.id===sel?' sel':'');
+    d.className='rbe'+(el.id===sel||multiSel.has(el.id)?' sel':'');
     d.dataset.id=el.id;
     d.style.left=el.x+'px';d.style.top=el.y+'px';
     d.style.width=el.w+'px';d.style.height=el.h+'px';
@@ -503,7 +514,7 @@ function render(){
     const h=document.createElement('div');h.className='rh';
     h.onmousedown=e=>{e.stopPropagation();startResize(e,el.id);};
     d.appendChild(h);
-    d.onmousedown=e=>{if(e.button===0){e.stopPropagation();select(el.id);startMove(e,el.id);}};
+    d.onmousedown=e=>{if(e.button===0){e.stopPropagation();select(el.id,e.shiftKey);startMove(e,el.id);}};
     CV.appendChild(d);
   });
 
@@ -601,8 +612,6 @@ function moveLayer(id,dir){
   const tmp=a.z; a.z=b.z; b.z=tmp;
   render();
 }
-
-function select(id){sel=id;render();showProps();}
 
 const TABICONS={basic:'ti-adjustments-horizontal',text:'ti-text-size',mods:'ti-puzzle',adv:'ti-settings'};
 
@@ -817,21 +826,37 @@ function syncUdimFromCanvas(el){
     el.pys=parseFloat((el.y/ch).toFixed(4));el.pyo=0;
   }
 }
-function up(id,k,v){const el=els.find(e=>e.id===id);if(el){el[k]=v;render();}}
+function up(id,k,v){
+  const el=els.find(e=>e.id===id);
+  if(!el)return;
+  if(k==='name'){
+    const dupe=els.find(e=>e.id!==id&&e.name===v);
+    if(dupe) toast('Name "'+v+'" already used by '+dupe.type,'err');
+  }
+  el[k]=v;render();
+}
 function upm(id,m,k,v){const el=els.find(e=>e.id===id);if(el&&el.mods[m]){el.mods[m][k]=v;render();}}
 function removeMod(id,m){const el=els.find(e=>e.id===id);if(el){delete el.mods[m];render();showProps();}}
 
 function startMove(e,id){
   const el=els.find(e=>e.id===id);if(!el)return;
   syncUdimFromCanvas(el);
+  const cw=cvW(),ch=cvH();
   const r=CV.getBoundingClientRect();
   const ox=e.clientX-r.left-el.x,oy=e.clientY-r.top-el.y;
+  const moving=multiSel.size>1&&multiSel.has(id)
+    ?[...multiSel].map(i=>els.find(e=>e.id===i)).filter(Boolean)
+    :[el];
+  const origins=moving.map(m=>({id:m.id,x:m.x,y:m.y}));
   const mm=ev=>{
-    const cw=cvW(),ch=cvH();
-    el.x=Math.max(0,Math.min(cw-el.w,Math.round(ev.clientX-r.left-ox)));
-    el.y=Math.max(0,Math.min(ch-el.h,Math.round(ev.clientY-r.top-oy)));
-    el.pxs=parseFloat((el.x/cw).toFixed(4));el.pxo=0;
-    el.pys=parseFloat((el.y/ch).toFixed(4));el.pyo=0;
+    const dx=snapVal(Math.round(ev.clientX-r.left-ox))-el.x;
+    const dy=snapVal(Math.round(ev.clientY-r.top-oy))-el.y;
+    moving.forEach((m,i)=>{
+      m.x=Math.max(0,Math.min(cw-m.w,origins[i].x+dx));
+      m.y=Math.max(0,Math.min(ch-m.h,origins[i].y+dy));
+      m.pxs=parseFloat((m.x/cw).toFixed(4));m.pxo=0;
+      m.pys=parseFloat((m.y/ch).toFixed(4));m.pyo=0;
+    });
     render();
   };
   const mu=()=>{document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};
@@ -844,8 +869,8 @@ function startResize(e,id){
   const sx=e.clientX,sy=e.clientY,sw=el.w,sh=el.h;
   const mm=ev=>{
     const cw=cvW(),ch=cvH();
-    el.w=Math.max(20,sw+ev.clientX-sx);
-    el.h=Math.max(14,sh+ev.clientY-sy);
+    el.w=Math.max(20,snapVal(sw+ev.clientX-sx));
+    el.h=Math.max(14,snapVal(sh+ev.clientY-sy));
     el.sxs=parseFloat((el.w/cw).toFixed(4));el.sxo=0;
     el.sys=parseFloat((el.h/ch).toFixed(4));el.syo=0;
     render();
@@ -854,15 +879,36 @@ function startResize(e,id){
   document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);
 }
 
-function cvMD(e){if(e.target===CV){sel=null;render();PROPS.style.display='none';}}
+function select(id,shift){
+  if(shift){
+    if(multiSel.has(id)){multiSel.delete(id);sel=multiSel.size?[...multiSel].at(-1):null;}
+    else{multiSel.add(id);sel=id;}
+  } else {
+    sel=id;multiSel.clear();multiSel.add(id);
+  }
+  render();showProps();
+}
 
-function delSel(){if(!sel)return;saveH();els=els.filter(e=>e.id!==sel);sel=null;render();PROPS.style.display='none';}
+function cvMD(e){if(e.target===CV){sel=null;multiSel.clear();render();PROPS.style.display='none';}}
+
+function delSel(){
+  if(!sel&&!multiSel.size)return;
+  saveH();
+  const kill=multiSel.size>0?new Set(multiSel):new Set([sel]);
+  els=els.filter(e=>!kill.has(e.id));
+  sel=null;multiSel.clear();render();PROPS.style.display='none';
+}
 
 function dupSel(){
-  const el=els.find(e=>e.id===sel);if(!el)return;saveH();
-  const c=JSON.parse(JSON.stringify(el));
-  c.id=uid();c.x+=16;c.y+=16;c.z=zc++;c.name=c.name+'_copy';
-  els.push(c);render();select(c.id);
+  const targets=multiSel.size>0?[...multiSel]:sel?[sel]:[];
+  if(!targets.length)return;saveH();
+  targets.forEach(id=>{
+    const el=els.find(e=>e.id===id);if(!el)return;
+    const c=JSON.parse(JSON.stringify(el));
+    c.id=uid();c.x+=16;c.y+=16;c.z=zc++;c.name=c.name+'_copy';
+    els.push(c);
+  });
+  render();
 }
 
 function reorder(d){const el=els.find(e=>e.id===sel);if(!el)return;el.z+=d*5;render();}
@@ -890,6 +936,17 @@ document.addEventListener('keydown',e=>{
   if(k==='B')addEl('TextButton');
   if(k==='I')addEl('ImageLabel');
 });
+
+function toggleSnap(){
+  snapOn=!snapOn;
+  const b=document.getElementById('tb-snap');
+  b.classList.toggle('on',snapOn);
+}
+function snapVal(v){
+  if(!snapOn)return v;
+  const g=parseInt(document.getElementById('snap-size').value)||8;
+  return Math.round(v/g)*g;
+}
 
 function setTool(t){document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));document.getElementById('tb-'+t)?.classList.add('on');}
 function clearAll(){if(!els.length)return;saveH();els=[];sel=null;render();PROPS.style.display='none';}
@@ -1245,6 +1302,34 @@ function loadExample(){
 
 resizeCanvas();
 genCode();
+
+(function(){
+  const handle=document.getElementById('right-resize');
+  const panel=document.getElementById('right');
+  let dragging=false,startX=0,startW=0;
+  handle.addEventListener('mousedown',e=>{
+    if(panel.classList.contains('hidden'))return;
+    dragging=true;
+    startX=e.clientX;
+    startW=panel.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    const delta=startX-e.clientX;
+    const w=Math.min(600,Math.max(180,startW+delta));
+    panel.style.width=w+'px';
+  });
+  document.addEventListener('mouseup',()=>{
+    if(!dragging)return;
+    dragging=false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+  });
+})();
 
 (function(){
   try{
