@@ -8,7 +8,7 @@ Live at: [heeditz.github.io/rbxui](https://heeditz.github.io/rbxui)
 
 ## How it works
 
-You place UI elements onto a canvas that represents a Roblox ScreenGui. Every change you make, whether moving, resizing, recoloring, or adding modifiers, instantly updates the Luau code on the right panel. When you are done, you copy the code or download it as a `.lua` file and paste it directly into a LocalScript, a Script, or your executor.
+You place UI elements onto a canvas that represents a Roblox ScreenGui. Every change you make, whether moving, resizing, recoloring, adding modifiers, or configuring tweens, instantly updates the Luau code on the right panel. When you are done, you copy the code or download it as a `.lua` file and paste it directly into a LocalScript, a Script, or your executor.
 
 All sizes and positions are stored as full UDim2 values with both scale and offset components. Scale is the default so layouts work across different screen sizes. You can override any value manually for pixel-perfect control or to express things like full screen (`1, 0, 1, 0`) or centered with a fixed height (`0.5, -80, 0, 36`).
 
@@ -85,13 +85,15 @@ Constraints enforce rules on an element's size or text size regardless of its pa
 
 ## Properties
 
-When an element is selected, its properties appear in the right panel under four tabs.
+When an element is selected, its properties appear in the right panel under tabs.
 
 **Basic** -- Name, parent, Size (XScale, XOffset, YScale, YOffset), Position (XScale, XOffset, YScale, YOffset), background color, background transparency, and any media asset IDs.
 
 **Text** -- Text content, text color, font size, font family, and alignment. Only visible for TextLabel, TextButton, and TextBox.
 
 **Mods** -- All modifiers attached to the selected element with their individual settings. Each modifier can be removed from here.
+
+**Tween** -- Configure a TweenService animation for this element. See the Tweens section below for full documentation.
 
 **Adv** -- ZIndex, AnchorPoint, and Visible toggle. ScrollingFrame also exposes scroll bar thickness and canvas size here.
 
@@ -121,6 +123,108 @@ When you drag or resize on the canvas, the scale fields update automatically wit
 
 ---
 
+## Tweens
+
+The Tween tab lets you configure a TweenService animation for any element. When enabled, the generated code includes a fully built `TweenService:Create()` call at the bottom of that element's block, ready to run.
+
+### How to set one up
+
+1. Select an element on the canvas.
+2. Open the Tween tab in the properties panel on the right.
+3. Set Enable to true.
+4. Configure the tween settings (time, easing style, direction, etc).
+5. Check the properties you want to animate in the "Animate Properties" section.
+6. Copy or download the code. The tween is included automatically.
+
+### Tween settings
+
+| Setting | Description |
+|---|---|
+| Enable | Whether to include tween code in the output. Set to false to keep the config but skip generation. |
+| Time | Duration of the tween in seconds. For example, 0.3 is 300ms, 1 is one full second. |
+| EasingStyle | The curve shape of the animation. Controls how fast or slow different parts of the motion feel. |
+| EasingDir | The direction of the easing. In = slow start, Out = slow end, InOut = slow start and end. |
+| Repeat | How many times the tween replays after the first play. Set to 0 to play once, -1 to loop forever. |
+| Reverses | When true, the tween plays forward then reverses back to its starting state each cycle. |
+| Delay | Seconds to wait before the tween starts playing. Useful for staggering multiple animations. |
+
+### Easing styles
+
+Each easing style controls the acceleration curve of the animation. Here is what each one feels like:
+
+| Style | Feel |
+|---|---|
+| Linear | Constant speed the whole way through. No acceleration or deceleration. |
+| Quad | Gentle curve. The default for most UI animations. Smooth and natural. |
+| Cubic | Slightly stronger curve than Quad. A bit more punch. |
+| Quart | Strong curve. Fast acceleration at the start or end. |
+| Quint | Very strong curve. Exaggerated acceleration. |
+| Sine | Smooth sinusoidal curve. Very organic feeling. |
+| Back | Overshoots the target slightly then settles. Good for buttons and popups. |
+| Bounce | Bounces at the end like a ball dropping. Playful and physical. |
+| Elastic | Snaps past the target and oscillates before settling. Spring-like. |
+| Exponential | Extreme curve. Near-zero speed at one end, very fast at the other. |
+| Circular | Based on a circular arc. Crisp and clean. |
+
+### Easing direction
+
+The direction controls which end of the motion the easing curve is applied to.
+
+- **In** -- The easing happens at the start. The animation starts slow then accelerates.
+- **Out** -- The easing happens at the end. The animation starts fast then decelerates. This is the most natural for UI elements appearing or moving.
+- **InOut** -- Easing at both ends. Starts slow, peaks in the middle, ends slow.
+
+### Animatable properties
+
+Check any combination of these in the Tween tab. The goal value for each one is pulled from the element's current settings at code-generation time.
+
+| Property | What it animates | Works on |
+|---|---|---|
+| Position | Moves the element to its set Position value | All elements |
+| Size | Resizes the element to its set Size value | All elements |
+| BackgroundColor3 | Fades the background color | All elements |
+| BackgroundTransparency | Fades the background in or out | All elements |
+| TextColor3 | Fades the text color | TextLabel, TextButton, TextBox |
+| TextTransparency | Fades the text in or out | TextLabel, TextButton, TextBox |
+| ImageColor3 | Fades the image tint color | ImageLabel, ImageButton |
+| ImageTransparency | Fades the image in or out | ImageLabel, ImageButton |
+| Rotation | Rotates the element to 0 degrees | All elements |
+
+### What the generated code looks like
+
+For a TextButton with a tween that animates Position and BackgroundColor3:
+
+```lua
+local OkBtn = Instance.new("TextButton")
+OkBtn.Size = UDim2.new(0.2, 0, 0.1, 0)
+OkBtn.Position = UDim2.new(0.4, 0, 0.45, 0)
+OkBtn.BackgroundColor3 = Color3.fromRGB(124, 109, 250)
+OkBtn.Text = "Confirm"
+OkBtn.Parent = ScreenGui
+
+local _tween_OkBtn = game:GetService("TweenService"):Create(OkBtn, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0), {
+    Position = UDim2.new(0.4, 0, 0.45, 0),
+    BackgroundColor3 = Color3.fromRGB(124, 109, 250)
+})
+_tween_OkBtn:Play()
+```
+
+The tween plays immediately when the script runs. If you want it to play on a specific event instead, such as a button click or a remote event firing, move the `:Play()` call inside the relevant event connection after pasting.
+
+### Common patterns
+
+**Fade in on load** -- Set BackgroundTransparency to 0, check BackgroundTransparency, set the element's transparency higher in your script before the tween plays, then let the tween animate it down to 0.
+
+**Slide in from off screen** -- Set Position to where you want the element to land, check Position, and in your script set the starting position to somewhere off screen before calling Play.
+
+**Button hover effect** -- Duplicate the tween block, wire one to MouseEnter and one to MouseLeave with different goal values. rbxui generates the base tween, you adjust the goal and event wiring after paste.
+
+**Staggered list** -- Add multiple elements, give each one a different Delay value (0, 0.1, 0.2, 0.3, etc) and the same animate properties. They will play in sequence when the script runs.
+
+**Looping pulse** -- Set Repeat to -1 and Reverses to true. The element will animate forward and back on a loop indefinitely.
+
+---
+
 ## Parenting
 
 By default all elements are parented to ScreenGui in the generated code. You can change the parent of any element from the Parent dropdown in the Basic tab. The dropdown lists ScreenGui and any container elements (Frame, ScrollingFrame, CanvasGroup, ViewportFrame) that currently exist in your scene. The generated code uses the correct variable name automatically.
@@ -135,6 +239,8 @@ You can reorder layers in two ways:
 
 1. Hover a layer row and click the up/down chevrons that appear on the right side.
 2. Grab the grip handle on the left of a row and drag it onto another row to swap their positions.
+
+The eye icon on each layer row toggles visibility. When hidden, the element fades on the canvas and the generated code includes `Visible = false`.
 
 ---
 
@@ -168,7 +274,7 @@ Click the ScreenGui Settings section at the bottom of the code panel to expand i
 
 ## Save and load
 
-Your project can be saved to the browser at any time. The save stores all elements, all properties, all modifier values, ScreenGui settings, and the canvas size.
+Your project can be saved to the browser at any time. The save stores all elements, all properties, all modifier values, tween settings, ScreenGui settings, and the canvas size.
 
 - **Save** -- Writes to browser storage. Shortcut: Ctrl+S.
 - **Load** -- Reads the last manual save back into the editor.
@@ -180,7 +286,7 @@ The dot next to the element counter in the header turns grey when you have unsav
 
 ## Code output
 
-The generated Luau is valid and self-contained. It creates the ScreenGui, all elements, and all modifiers in one block. Each element is declared as a local variable. Modifiers are declared as locals prefixed with an underscore and the modifier type, for example `_UICorner_MainFrame`.
+The generated Luau is valid and self-contained. It creates the ScreenGui, all elements, all modifiers, and all enabled tweens in one block. Each element is declared as a local variable. Modifiers use the naming pattern `_ModifierType_ElementName`. Tweens use the naming pattern `_tween_ElementName`.
 
 Use the Copy button to copy to clipboard or the Download button to save directly as a `.lua` file named after your ScreenGui.
 
@@ -196,10 +302,14 @@ The output is ready to paste into a LocalScript under StarterGui, directly into 
 | T | Add TextLabel |
 | B | Add TextButton |
 | I | Add ImageLabel |
+| G | Toggle snap to grid |
 | Del | Delete selected element |
 | Ctrl+D | Duplicate selected element |
 | Ctrl+Z | Undo |
+| Ctrl+Y | Redo |
+| Ctrl+Shift+Z | Redo |
 | Ctrl+S | Save project |
+| Shift+Click | Add to or remove from selection |
 
 Shortcuts are disabled while any input field is focused so they do not interfere with typing.
 
