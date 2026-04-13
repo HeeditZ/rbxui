@@ -317,7 +317,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
 </div>
 
 <script>
-let els=[], sel=null, multiSel=new Set(), zc=10, hist=[], dragType=null, proptab='basic', codeVisible=true, snapOn=false;
+let els=[], sel=null, multiSel=new Set(), zc=10, hist=[], redoHist=[], dragType=null, proptab='basic', codeVisible=true, snapOn=false;
 
 const CV=document.getElementById('canvas');
 const COUT=document.getElementById('cout');
@@ -593,6 +593,14 @@ function renderLayers(){
     dn.innerHTML='<i class="ti ti-chevron-down"></i>';
     dn.onclick=e=>{e.stopPropagation();moveLayer(el.id,-1);};
 
+    const vis=document.createElement('button');
+    vis.className='larr';
+    vis.title=el.visible?'Hide':'Show';
+    vis.innerHTML=`<i class="ti ti-eye${el.visible?'':'-off'}"></i>`;
+    vis.style.color=el.visible?'var(--t3)':'var(--red)';
+    vis.onclick=e=>{e.stopPropagation();el.visible=!el.visible;render();};
+
+    arrows.appendChild(vis);
     arrows.appendChild(up);
     arrows.appendChild(dn);
     row.appendChild(handle);
@@ -613,7 +621,7 @@ function moveLayer(id,dir){
   render();
 }
 
-const TABICONS={basic:'ti-adjustments-horizontal',text:'ti-text-size',mods:'ti-puzzle',adv:'ti-settings'};
+const TABICONS={basic:'ti-adjustments-horizontal',text:'ti-text-size',mods:'ti-puzzle',adv:'ti-settings',tween:'ti-player-play'};
 
 function showProps(){
   const el=els.find(e=>e.id===sel);
@@ -621,7 +629,7 @@ function showProps(){
   PROPS.style.display='block';
 
   const hasTxt=['TextLabel','TextButton','TextBox'].includes(el.type);
-  const tabs=hasTxt?['basic','text','mods','adv']:['basic','mods','adv'];
+  const tabs=hasTxt?['basic','text','mods','tween','adv']:['basic','mods','tween','adv'];
   if(!tabs.includes(proptab))proptab='basic';
 
   PTABS.innerHTML=tabs.map(t=>`<button class="ptab${proptab===t?' on':''}" onclick="setTab('${t}')"><i class="ti ${TABICONS[t]}"></i> ${t}</button>`).join('');
@@ -773,6 +781,67 @@ function showProps(){
       `:''}
     `;
   }
+
+  if(proptab==='tween'){
+    const tw=el.tween||{};
+    const styles=['Linear','Quad','Cubic','Quart','Quint','Sine','Back','Bounce','Elastic','Exponential','Circular'];
+    const dirs=['In','Out','InOut'];
+    const props=['Position','Size','BackgroundColor3','BackgroundTransparency','TextColor3','TextTransparency','ImageColor3','ImageTransparency','Rotation'];
+    const enabled=tw.enabled||false;
+    const selProps=tw.props||[];
+    PINNER.innerHTML=`
+      <div class="prow">
+        <span class="plbl">Enable</span>
+        <select class="pi" onchange="upTw('${el.id}','enabled',this.value==='true')" style="font-family:'Outfit',sans-serif">
+          <option${!enabled?' selected':''} value="false">false</option>
+          <option${enabled?' selected':''} value="true">true</option>
+        </select>
+      </div>
+      <div class="prow"><span class="plbl">Time</span><input class="pi" type="number" min="0" step="0.1" value="${tw.time??0.3}" oninput="upTw('${el.id}','time',+this.value)"></div>
+      <div class="prow"><span class="plbl">EasingStyle</span>
+        <select class="pi" onchange="upTw('${el.id}','style',this.value)" style="font-family:'Outfit',sans-serif">
+          ${styles.map(s=>`<option${(tw.style||'Quad')===s?' selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="prow"><span class="plbl">EasingDir</span>
+        <select class="pi" onchange="upTw('${el.id}','dir',this.value)" style="font-family:'Outfit',sans-serif">
+          ${dirs.map(d=>`<option${(tw.dir||'Out')===d?' selected':''}>${d}</option>`).join('')}
+        </select>
+      </div>
+      <div class="prow"><span class="plbl">Repeat</span><input class="pi" type="number" min="0" step="1" value="${tw.repeat??0}" oninput="upTw('${el.id}','repeat',+this.value)"></div>
+      <div class="prow"><span class="plbl">Reverses</span>
+        <select class="pi" onchange="upTw('${el.id}','reverses',this.value==='true')" style="font-family:'Outfit',sans-serif">
+          <option${!(tw.reverses)?' selected':''} value="false">false</option>
+          <option${tw.reverses?' selected':''} value="true">true</option>
+        </select>
+      </div>
+      <div class="prow"><span class="plbl">Delay</span><input class="pi" type="number" min="0" step="0.05" value="${tw.delay??0}" oninput="upTw('${el.id}','delay',+this.value)"></div>
+      <div style="padding:6px 12px 3px;font-size:10px;color:var(--t3);letter-spacing:.5px">ANIMATE PROPERTIES</div>
+      <div style="padding:2px 12px 8px;display:flex;flex-direction:column;gap:3px">
+        ${props.map(p=>`
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--t2);cursor:pointer;padding:2px 0">
+            <input type="checkbox" ${selProps.includes(p)?'checked':''} onchange="toggleTwProp('${el.id}','${p}',this.checked)" style="accent-color:var(--accent)">
+            ${p}
+          </label>
+        `).join('')}
+      </div>
+      <div style="padding:3px 12px 6px;font-size:10px;color:var(--t3)">Tween goal values are taken from the element's current properties at code-gen time.</div>
+    `;
+  }
+}
+
+function upTw(id,k,v){
+  const el=els.find(e=>e.id===id);if(!el)return;
+  if(!el.tween)el.tween={};
+  el.tween[k]=v;genCode();
+}
+function toggleTwProp(id,prop,checked){
+  const el=els.find(e=>e.id===id);if(!el)return;
+  if(!el.tween)el.tween={};
+  if(!el.tween.props)el.tween.props=[];
+  if(checked){if(!el.tween.props.includes(prop))el.tween.props.push(prop);}
+  else{el.tween.props=el.tween.props.filter(p=>p!==prop);}
+  genCode();
 }
 
 function buildParentOptions(selfId){
@@ -913,8 +982,9 @@ function dupSel(){
 
 function reorder(d){const el=els.find(e=>e.id===sel);if(!el)return;el.z+=d*5;render();}
 
-function saveH(){hist.push(JSON.stringify(els));if(hist.length>50)hist.shift();}
-function undo(){if(!hist.length)return;els=JSON.parse(hist.pop());sel=null;render();PROPS.style.display='none';}
+function saveH(){hist.push(JSON.stringify(els));if(hist.length>50)hist.shift();redoHist=[];}
+function undo(){if(!hist.length)return;redoHist.push(JSON.stringify(els));els=JSON.parse(hist.pop());sel=null;multiSel.clear();render();PROPS.style.display='none';}
+function redo(){if(!redoHist.length)return;hist.push(JSON.stringify(els));els=JSON.parse(redoHist.pop());sel=null;multiSel.clear();render();PROPS.style.display='none';}
 
 function showCtx(e){e.preventDefault();if(!sel)return;CTX.style.display='block';CTX.style.left=e.clientX+'px';CTX.style.top=e.clientY+'px';}
 document.addEventListener('click',()=>CTX.style.display='none');
@@ -927,10 +997,12 @@ function isTyping(){
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveProject();return;}
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();return;}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='Z'))){e.preventDefault();redo();return;}
   if((e.ctrlKey||e.metaKey)&&e.key==='d'){e.preventDefault();dupSel();return;}
   if(isTyping())return;
   if(e.key==='Delete'||e.key==='Backspace'){delSel();return;}
   const k=e.key.toUpperCase();
+  if(k==='G'){toggleSnap();return;}
   if(k==='F')addEl('Frame');
   if(k==='T')addEl('TextLabel');
   if(k==='B')addEl('TextButton');
@@ -1251,6 +1323,29 @@ function buildCode(){
       }
       L.push(`${mn}.Parent = ${n}`);
     });
+
+    if(el.tween&&el.tween.enabled&&el.tween.props&&el.tween.props.length){
+      const tw=el.tween;
+      const tn=`_tween_${n}`;
+      const info=`TweenInfo.new(${tw.time??0.3}, Enum.EasingStyle.${tw.style||'Quad'}, Enum.EasingDirection.${tw.dir||'Out'}, ${tw.repeat??0}, ${tw.reverses?'true':'false'}, ${tw.delay??0})`;
+      L.push('');
+      const goals=[];
+      tw.props.forEach(p=>{
+        if(p==='Position')goals.push(`Position = ${fmtPos(el)}`);
+        else if(p==='Size')goals.push(`Size = ${fmtSz(el)}`);
+        else if(p==='BackgroundColor3')goals.push(`BackgroundColor3 = Color3.fromRGB(${toRGB(el.bg)})`);
+        else if(p==='BackgroundTransparency')goals.push(`BackgroundTransparency = ${el.bgTrans||0}`);
+        else if(p==='TextColor3')goals.push(`TextColor3 = Color3.fromRGB(${toRGB(el.tc||'#ffffff')})`);
+        else if(p==='TextTransparency')goals.push(`TextTransparency = 0`);
+        else if(p==='ImageColor3')goals.push(`ImageColor3 = Color3.fromRGB(255, 255, 255)`);
+        else if(p==='ImageTransparency')goals.push(`ImageTransparency = 0`);
+        else if(p==='Rotation')goals.push(`Rotation = 0`);
+      });
+      L.push(`local ${tn} = game:GetService("TweenService"):Create(${n}, ${info}, {`);
+      goals.forEach((g,i)=>L.push(`\t${g}${i<goals.length-1?',':''}`));
+      L.push(`})`);
+      L.push(`${tn}:Play()`);
+    }
 
     L.push('');
   });
