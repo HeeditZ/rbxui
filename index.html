@@ -9,11 +9,11 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg0:#0c0c0e;--bg1:#111115;--bg2:#18181d;--bg3:#20202a;
+  --bg0:#0c0c0e;--bg1:#111115;--bg2:#18181d;--bg3:#20202a;--bg4:#2a2a38;
   --accent:#7c6dfa;--adim:rgba(124,109,250,0.14);
   --bdr:#252530;--bdr2:#2e2e3c;
   --t1:#eeeef5;--t2:#9494aa;--t3:#52525f;
-  --green:#3ecf8e;--red:#f05a5a;
+  --green:#3ecf8e;--red:#f05a5a;--yellow:#e2b93b;
 }
 html,body{height:100%;overflow:hidden}
 body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);display:flex;flex-direction:column}
@@ -30,6 +30,8 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
 .hbtn.acc{background:var(--accent);border-color:var(--accent);color:#fff}
 .hbtn.acc:hover{opacity:.86}
 .hbtn.tog.on{background:var(--bg3);color:var(--t1);border-color:var(--bdr2)}
+.hbtn.live{background:var(--green);border-color:var(--green);color:#06210f}
+.hbtn.live.on{background:var(--red);border-color:var(--red);color:#fff}
 .sp{flex:1}
 #ecount{font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace}
 
@@ -56,10 +58,16 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
 
 #cscroll{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:28px;background:var(--bg0);background-image:radial-gradient(circle,#24243a 1px,transparent 1px);background-size:22px 22px}
 
-#canvas{background:#141418;border:1px solid var(--bdr2);border-radius:3px;position:relative;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 1px #000,0 16px 48px rgba(0,0,0,.7)}
+#canvas{background:#141418;border:1px solid var(--bdr2);border-radius:3px;position:relative;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 1px #000,0 16px 48px rgba(0,0,0,.7);transition:box-shadow .2s}
 #canvas::after{content:'ScreenGui';position:absolute;top:5px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,.12);pointer-events:none;font-family:'JetBrains Mono',monospace;letter-spacing:.4px}
+#canvas.live{border-color:var(--green);box-shadow:0 0 0 1px #000,0 0 24px rgba(62,207,142,.35),0 16px 48px rgba(0,0,0,.7)}
+#canvas.live .rbe{cursor:default}
+#canvas.live .rh{display:none}
+#live-banner{position:absolute;top:0;left:0;right:0;height:22px;background:rgba(62,207,142,.14);border-bottom:1px solid rgba(62,207,142,.35);color:var(--green);font-size:10px;display:none;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;letter-spacing:.4px;z-index:100;pointer-events:none}
+#canvas.live #live-banner{display:flex}
 
-.rbe{position:absolute;cursor:move;user-select:none;box-sizing:border-box}
+.rbe{position:absolute;cursor:move;user-select:none;box-sizing:border-box;transition:background .2s,box-shadow .2s,transform .2s,opacity .2s}
+#canvas:not(.live) .rbe{transition:none}
 .rbe.sel{outline:2px solid var(--accent)!important;outline-offset:1px}
 .rbe .rh{position:absolute;bottom:-5px;right:-5px;width:10px;height:10px;background:var(--accent);border-radius:2px;cursor:se-resize;z-index:20;border:1px solid rgba(255,255,255,.3)}
 
@@ -76,7 +84,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
 #cout{flex:1;overflow:auto;padding:12px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.75;white-space:pre;color:#c9d1d9;background:var(--bg0)}
 .kw{color:#ff7b72}.fn{color:#d2a8ff}.str{color:#a5d6ff}.num{color:#79c0ff}.cmt{color:#6e7681;font-style:italic}
 
-#props{border-top:1px solid var(--bdr);flex-shrink:0;max-height:280px;overflow-y:auto}
+#props{border-top:1px solid var(--bdr);flex-shrink:0;max-height:340px;overflow-y:auto}
 .ptitle{font-size:10px;font-weight:600;color:var(--t3);letter-spacing:.9px;text-transform:uppercase;padding:9px 12px 5px}
 .prow{display:flex;align-items:center;padding:3px 12px;gap:7px;min-height:28px}
 .plbl{font-size:11.5px;color:var(--t2);width:74px;flex-shrink:0;white-space:nowrap}
@@ -86,14 +94,38 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
 .pc{width:26px;height:22px;border:1px solid var(--bdr2);border-radius:4px;cursor:pointer;padding:0;background:none;flex-shrink:0}
 .pchex{font-size:10.5px;color:var(--t3);font-family:'JetBrains Mono',monospace}
 .ptabs{display:flex;gap:2px;padding:6px 8px 2px;flex-shrink:0;flex-wrap:wrap}
-.ptab{padding:4px 10px;border-radius:5px;border:1px solid transparent;font-size:11px;color:var(--t2);cursor:pointer;font-family:'Outfit',sans-serif;background:transparent;transition:all .1s}
+.ptab{padding:4px 10px;border-radius:5px;border:1px solid transparent;font-size:11px;color:var(--t2);cursor:pointer;font-family:'Outfit',sans-serif;background:transparent;transition:all .1s;display:flex;align-items:center;gap:4px}
 .ptab:hover{background:var(--bg3);color:var(--t1)}
 .ptab.on{background:var(--bg3);color:var(--accent);border-color:var(--bdr2)}
+.ptab i{font-size:13px}
 .psub{font-size:10px;color:var(--t3);padding:5px 12px 2px;font-weight:500;letter-spacing:.4px}
+.pcard{border:1px solid var(--bdr);border-radius:7px;margin:4px 10px 6px;background:var(--bg2);overflow:hidden}
+.pcard-hdr{display:flex;align-items:center;gap:7px;padding:6px 9px;cursor:pointer;background:var(--bg1);user-select:none}
+.pcard-hdr:hover{background:var(--bg3)}
+.pcard-hdr .cname{font-size:12px;color:var(--t1);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcard-hdr i.ti{font-size:13px;color:var(--t3)}
+.pcard-hdr .badge{font-size:9.5px;padding:1px 6px;border-radius:3px;background:var(--adim);color:var(--accent);font-family:'JetBrains Mono',monospace}
+.pcard-hdr .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.pcard-hdr .dot.off{background:var(--t3)}
+.pcard-body{padding:6px 9px 9px;display:block}
+.pcard.collapsed .pcard-body{display:none}
+.scriptarea{width:100%;min-height:64px;background:var(--bg0);border:1px solid var(--bdr2);border-radius:5px;padding:6px 8px;color:var(--t1);font-size:11px;font-family:'JetBrains Mono',monospace;outline:none;resize:vertical;line-height:1.55}
+.scriptarea:focus{border-color:var(--accent)}
+.smallbtn{padding:3px 8px;border-radius:5px;border:1px solid var(--bdr2);background:var(--bg2);color:var(--t2);font-size:10.5px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .1s;display:inline-flex;align-items:center;gap:4px}
+.smallbtn:hover{background:var(--bg3);color:var(--t1)}
+.smallbtn.acc{background:var(--accent);border-color:var(--accent);color:#fff}
+.smallbtn.acc:hover{opacity:.86}
+.smallbtn.dngr{color:var(--red)}
+.smallbtn.dngr:hover{background:rgba(240,90,90,.12);border-color:var(--red)}
+.rowflex{display:flex;gap:6px;align-items:center}
+.dimtxt{font-size:10.5px;color:var(--t3);line-height:1.5}
+.checkrow{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--t2);cursor:pointer;padding:2px 0}
+.checkrow input{accent-color:var(--accent)}
 
-#sgpanel{border-top:1px solid var(--bdr);flex-shrink:0;background:var(--bg0)}
+#sgpanel{border-top:1px solid var(--bdr);flex-shrink:0;background:var(--bg0);max-height:50%;overflow-y:auto}
 #sgpanel .ptitle{cursor:pointer;display:flex;align-items:center;gap:6px;user-select:none}
 #sgpanel .ptitle i.arr{margin-left:auto;font-size:13px;color:var(--t3)}
+#sg-body{display:none;padding-bottom:8px}
 
 #empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none}
 #empty i{font-size:28px;color:var(--t3)}
@@ -121,6 +153,10 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
 .layer-row.on .layer-main{color:var(--accent)}
 .layer-main i{font-size:14px;width:16px;flex-shrink:0}
 .layer-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layer-tags{display:flex;gap:3px;flex-shrink:0;margin-right:2px}
+.layer-tag{width:5px;height:5px;border-radius:50%}
+.layer-tag.anim{background:var(--accent)}
+.layer-tag.code{background:var(--green)}
 .layer-arrows{display:flex;flex-direction:column;gap:0px;opacity:0;transition:opacity .1s;flex-shrink:0}
 .layer-row:hover .layer-arrows{opacity:1}
 .larr{width:18px;height:13px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--t3);cursor:pointer;border-radius:3px;font-size:11px;padding:0}
@@ -131,8 +167,32 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #toast.ok{border-color:var(--green);color:var(--green)}
 #toast.err{border-color:var(--red);color:var(--red)}
+#toast.warn{border-color:var(--yellow);color:var(--yellow)}
 #save-dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:none;flex-shrink:0}
 #save-dot.dirty{background:var(--t3)}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.modal-bg.on{display:flex}
+.modal{background:var(--bg1);border:1px solid var(--bdr2);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.7);width:640px;max-width:92vw;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-hdr{padding:12px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:9px;font-size:14px;font-weight:500}
+.modal-hdr i{font-size:16px;color:var(--accent)}
+.modal-hdr .close{margin-left:auto;background:none;border:none;color:var(--t3);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:4px}
+.modal-hdr .close:hover{background:var(--bg3);color:var(--t1)}
+.modal-body{padding:14px 16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px}
+.modal-ftr{padding:10px 16px;border-top:1px solid var(--bdr);display:flex;gap:8px;justify-content:flex-end}
+.import-area{width:100%;min-height:220px;background:var(--bg0);border:1px solid var(--bdr2);border-radius:6px;padding:10px;color:var(--t1);font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.6;outline:none;resize:vertical}
+.import-area:focus{border-color:var(--accent)}
+.import-preview{background:var(--bg0);border:1px solid var(--bdr2);border-radius:6px;padding:10px;font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--t2);max-height:200px;overflow-y:auto;line-height:1.65}
+.import-preview .ok{color:var(--green)}
+.import-preview .warn{color:var(--yellow)}
+.import-preview .err{color:var(--red)}
+.import-preview .dim{color:var(--t3)}
+
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px 0}
+.preset-item{border:1px solid var(--bdr2);border-radius:6px;padding:8px 10px;background:var(--bg2);cursor:pointer;transition:all .12s;display:flex;flex-direction:column;gap:3px;text-align:left;font-family:'Outfit',sans-serif}
+.preset-item:hover{background:var(--bg3);border-color:var(--accent)}
+.preset-item .pname{font-size:12px;color:var(--t1);font-weight:500}
+.preset-item .pdesc{font-size:10px;color:var(--t3);line-height:1.4}
 </style>
 </head>
 <body>
@@ -145,10 +205,12 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
   <div class="vs"></div>
   <button class="hbtn" onclick="saveProject()" title="Save to browser (Ctrl+S)"><i class="ti ti-device-floppy"></i> Save</button>
   <button class="hbtn" onclick="loadProject()" title="Load last save"><i class="ti ti-folder-open"></i> Load</button>
+  <button class="hbtn" onclick="openImport()" title="Import from Luau code"><i class="ti ti-file-import"></i> Import</button>
   <div class="vs"></div>
   <div id="save-dot" title="Unsaved changes"></div>
   <span id="ecount">0 elements</span>
   <div class="sp"></div>
+  <button class="hbtn live" id="live-btn" onclick="toggleLive()" title="Preview animations"><i class="ti ti-player-play"></i> Live</button>
   <button class="hbtn tog" id="code-tog" onclick="toggleCode()" title="Toggle code panel"><i class="ti ti-code"></i> Code</button>
   <button class="hbtn" onclick="downloadLua()" title="Download as .lua file"><i class="ti ti-download"></i> Download</button>
   <button class="hbtn acc" onclick="copyCode()"><i class="ti ti-copy"></i> Copy Luau</button>
@@ -233,6 +295,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
       ondrop="dropEl(event)"
       onmousedown="cvMD(event)"
       oncontextmenu="showCtx(event)">
+      <div id="live-banner">LIVE PREVIEW - custom Luau does not run</div>
       <div id="empty">
         <i class="ti ti-click"></i>
         <p>Click an element on the left or drag it onto the canvas</p>
@@ -266,7 +329,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
       <i class="ti ti-settings" style="font-size:12px"></i> ScreenGui Settings
       <i class="ti ti-chevron-down arr" id="sg-arrow"></i>
     </div>
-    <div id="sg-body" style="display:none;padding-bottom:8px">
+    <div id="sg-body">
       <div class="prow"><span class="plbl">Name</span><input class="pi" id="sg-name" value="ScreenGui" oninput="genCode()"></div>
       <div class="prow"><span class="plbl">Parent</span>
         <select class="pi" id="sg-parent" onchange="onSgParent()" style="font-family:'Outfit',sans-serif">
@@ -298,6 +361,11 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
           <option value="false">false</option><option value="true">true</option>
         </select>
       </div>
+      <div class="ptitle" style="cursor:default">Global Scripts</div>
+      <div style="padding:0 12px 8px">
+        <textarea class="scriptarea" id="sg-globals" placeholder="local Players = game:GetService(&quot;Players&quot;)&#10;local TweenService = game:GetService(&quot;TweenService&quot;)" oninput="genCode()"></textarea>
+        <div class="dimtxt" style="margin-top:5px">Injected after the ScreenGui is created, before any elements.</div>
+      </div>
     </div>
   </div>
   <div id="props" style="display:none">
@@ -316,8 +384,45 @@ body{font-family:'Outfit',sans-serif;background:var(--bg0);color:var(--t1);displ
   <div class="ci del" onclick="delSel()"><i class="ti ti-trash"></i>Delete</div>
 </div>
 
+<div class="modal-bg" id="import-modal">
+  <div class="modal">
+    <div class="modal-hdr"><i class="ti ti-file-import"></i> Import from Luau <button class="close" onclick="closeImport()">x</button></div>
+    <div class="modal-body">
+      <div class="dimtxt">Paste Luau code that creates GUI instances. Line based scan, complex dynamic code may need manual cleanup.</div>
+      <div class="rowflex">
+        <label class="checkrow"><input type="radio" name="import-mode" value="replace" checked> Replace scene</label>
+        <label class="checkrow"><input type="radio" name="import-mode" value="merge"> Merge into scene</label>
+      </div>
+      <textarea class="import-area" id="import-input" placeholder="local ScreenGui = Instance.new(&quot;ScreenGui&quot;)&#10;local Frame = Instance.new(&quot;Frame&quot;)&#10;Frame.Size = UDim2.new(0, 200, 0, 100)&#10;Frame.Parent = ScreenGui"></textarea>
+      <div style="display:flex;gap:8px">
+        <button class="smallbtn acc" onclick="scanImport()"><i class="ti ti-scan"></i> Scan</button>
+        <button class="smallbtn" onclick="document.getElementById('import-input').value=''">Clear</button>
+      </div>
+      <div class="import-preview" id="import-preview" style="display:none"></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="smallbtn" onclick="closeImport()">Cancel</button>
+      <button class="smallbtn acc" id="import-confirm" onclick="doImport()" disabled>Import</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="preset-modal">
+  <div class="modal" style="width:540px">
+    <div class="modal-hdr"><i class="ti ti-wand"></i> <span id="preset-title">Presets</span> <button class="close" onclick="closePreset()">x</button></div>
+    <div class="modal-body" id="preset-body"></div>
+  </div>
+</div>
+
 <script>
-let els=[], sel=null, multiSel=new Set(), zc=10, hist=[], redoHist=[], dragType=null, proptab='basic', codeVisible=true, snapOn=false;
+const els=[], selState={sel:null,multi:new Set()};
+</script>
+<script>
+let els=[];
+
+let sel=null, multiSel=new Set(), zc=10, hist=[], redoHist=[], dragType=null, proptab='basic', codeVisible=true, snapOn=false;
+let liveMode=false, liveSnapshots=new Map(), liveDrivers=[];
+let lastImportResult=null;
 
 const CV=document.getElementById('canvas');
 const COUT=document.getElementById('cout');
@@ -356,6 +461,51 @@ const MODDEFS={
   UIAspectRatioConstraint:{AspectRatio:1,AspectType:'FitWithinMaxSize',DominantAxis:'Width'},
 };
 
+const TRIGGERS={
+  default:['MouseEnter','MouseLeave','InputBegan','InputEnded','Changed','AncestryChanged','Destroying','Custom'],
+  TextButton:['MouseButton1Click','MouseButton1Down','MouseButton1Up','MouseEnter','MouseLeave','Activated','Custom'],
+  ImageButton:['MouseButton1Click','MouseButton1Down','MouseButton1Up','MouseEnter','MouseLeave','Activated','Custom'],
+  TextBox:['Focused','FocusLost','ReturnPressedFromOnScreenKeyboard','Changed','Custom'],
+  ScrollingFrame:['Changed','Custom'],
+};
+
+const ANIM_DEFS={
+  fade_in:        {name:'Fade in',desc:'On load',trigger:'load',duration:0.4,easing:'Quad.Out',kind:'fade',from:1,to:0,prop:'BackgroundTransparency'},
+  fade_out:       {name:'Fade out + destroy',desc:'On click, fades and removes',trigger:'click',duration:0.3,easing:'Quad.In',kind:'fade_destroy',from:0,to:1,prop:'BackgroundTransparency'},
+  slide_left:     {name:'Slide in from left',desc:'On load',trigger:'load',duration:0.4,easing:'Quad.Out',kind:'slide',axis:'x',from:-1,to:0},
+  slide_right:    {name:'Slide in from right',desc:'On load',trigger:'load',duration:0.4,easing:'Quad.Out',kind:'slide',axis:'x',from:1,to:0},
+  slide_top:      {name:'Slide in from top',desc:'On load',trigger:'load',duration:0.4,easing:'Quad.Out',kind:'slide',axis:'y',from:-1,to:0},
+  slide_bottom:   {name:'Slide in from bottom',desc:'On load',trigger:'load',duration:0.4,easing:'Quad.Out',kind:'slide',axis:'y',from:1,to:0},
+  pop_in:         {name:'Pop in',desc:'Scale bounce on load',trigger:'load',duration:0.5,easing:'Back.Out',kind:'pop',from:0.4,to:1},
+  zoom_in:        {name:'Zoom in',desc:'Scale from 0.8 on load',trigger:'load',duration:0.35,easing:'Quad.Out',kind:'pop',from:0.8,to:1},
+  hover_grow:     {name:'Hover grow',desc:'Scale 1.05 on hover',trigger:'hover',duration:0.15,easing:'Quad.Out',kind:'pop',from:1,to:1.05},
+  hover_bright:   {name:'Hover brighten',desc:'Brightens on hover',trigger:'hover',duration:0.15,easing:'Quad.Out',kind:'bright',from:0,to:0.15},
+  hover_glow:     {name:'Hover glow',desc:'Outline glow on hover',trigger:'hover',duration:0.15,easing:'Quad.Out',kind:'glow',from:0,to:1},
+  hover_lift:     {name:'Hover lift',desc:'Lift up 2px on hover',trigger:'hover',duration:0.15,easing:'Quad.Out',kind:'lift',from:0,to:-2},
+  click_punch:    {name:'Click punch',desc:'Shrinks and springs back',trigger:'click',duration:0.25,easing:'Back.Out',kind:'punch',from:1,to:0.94},
+  click_shake:    {name:'Click shake',desc:'Shakes horizontally',trigger:'click',duration:0.3,easing:'Sine.InOut',kind:'shake',from:0,to:6},
+  click_flash:    {name:'Click flash',desc:'Flashes white',trigger:'click',duration:0.2,easing:'Quad.Out',kind:'flash',from:0,to:0.5},
+  pulse_loop:     {name:'Pulse loop',desc:'Slow opacity pulse',trigger:'loop',duration:1.6,easing:'Sine.InOut',kind:'pulse',from:0,to:0.3},
+  float_loop:     {name:'Idle float',desc:'Gentle up down loop',trigger:'loop',duration:2.2,easing:'Sine.InOut',kind:'float',from:0,to:-4},
+};
+
+const SCRIPT_PRESETS=[
+  {name:'Destroy parent',desc:'Removes the element when clicked',trigger:'MouseButton1Click',body:'script.Parent:Destroy()',types:['TextButton','ImageButton']},
+  {name:'Print message',desc:'Logs a message to output',trigger:'MouseButton1Click',body:'print("clicked!")',types:['TextButton','ImageButton']},
+  {name:'Warn message',desc:'Logs a warning',trigger:'MouseButton1Click',body:'warn("something happened")',types:['TextButton','ImageButton']},
+  {name:'Toggle visibility',desc:'Shows or hides another element',trigger:'MouseButton1Click',body:'TARGET.Visible = not TARGET.Visible',types:['TextButton','ImageButton'],needsTarget:true},
+  {name:'Set text',desc:'Changes text of another element',trigger:'MouseButton1Click',body:'TARGET.Text = "new text"',types:['TextButton','ImageButton'],needsTarget:true},
+  {name:'Set color',desc:'Changes color of another element',trigger:'MouseButton1Click',body:'TARGET.BackgroundColor3 = Color3.fromRGB(124, 109, 250)',types:['TextButton','ImageButton'],needsTarget:true},
+  {name:'Open frame',desc:'Makes another frame visible',trigger:'MouseButton1Click',body:'TARGET.Visible = true',types:['TextButton','ImageButton'],needsTarget:true},
+  {name:'Close frame',desc:'Hides another frame',trigger:'MouseButton1Click',body:'TARGET.Visible = false',types:['TextButton','ImageButton'],needsTarget:true},
+  {name:'Fire remote',desc:'Fires a RemoteEvent',trigger:'MouseButton1Click',body:'game:GetService("ReplicatedStorage").RemoteEvent:FireServer()',types:['TextButton','ImageButton']},
+  {name:'Play sound',desc:'Plays a Sound instance',trigger:'MouseButton1Click',body:'local s = Instance.new("Sound")\ns.SoundId = "rbxassetid://0"\ns.Parent = script.Parent\ns:Play()',types:['TextButton','ImageButton']},
+  {name:'Debounce wrapper',desc:'Prevents rapid repeated clicks',trigger:'MouseButton1Click',body:'if _DEB then return end\n_DEB = true\n\n-- do stuff here\n\nDEB = false',types:['TextButton','ImageButton']},
+  {name:'Cooldown wrapper',desc:'Disables for a moment after click',trigger:'MouseButton1Click',body:'script.Parent.Active = false\nscript.Parent.AutoButtonColor = false\n\ntask.wait(1)\n\nscript.Parent.Active = true\nscript.Parent.AutoButtonColor = true',types:['TextButton','ImageButton']},
+  {name:'Close button',desc:'Destroys the ScreenGui',trigger:'MouseButton1Click',body:'script.Parent.Parent:Destroy()',types:['TextButton','ImageButton']},
+  {name:'Draggable frame',desc:'Lets a frame be dragged',trigger:'InputBegan',body:'local dragging = false\nlocal start, origin\n\nscript.Parent.InputBegan:Connect(function(input)\n\tif input.UserInputType == Enum.UserInputType.MouseButton1 then\n\t\tdragging = true\n\t\tstart = input.Position\n\t\torigin = script.Parent.Position\n\tend\nend)\n\ngame:GetService("UserInputService").InputChanged:Connect(function(input)\n\tif dragging and input.UserInputType == Enum.UserInputType.MouseMovement then\n\t\tlocal d = input.Position - start\n\t\tscript.Parent.Position = UDim2.new(origin.X.Scale, origin.X.Offset + d.X, origin.Y.Scale, origin.Y.Offset + d.Y)\n\tend\nend)\n\ngame:GetService("UserInputService").InputEnded:Connect(function(input)\n\tif input.UserInputType == Enum.UserInputType.MouseButton1 then\n\t\tdragging = false\n\tend\nend)',types:['Frame','CanvasGroup']},
+];
+
 function uid(){return 'e'+Math.random().toString(36).slice(2,7)}
 function cvW(){return parseInt(document.getElementById('cv-w').value)||480}
 function cvH(){return parseInt(document.getElementById('cv-h').value)||320}
@@ -376,25 +526,21 @@ function toggleCode(){
   codeVisible=!codeVisible;
   const r=document.getElementById('right');
   const btn=document.getElementById('code-tog');
-  if(codeVisible){
-    r.classList.remove('hidden');
-    btn.classList.remove('on');
-  } else {
-    r.classList.add('hidden');
-    btn.classList.add('on');
-  }
+  if(codeVisible){r.classList.remove('hidden');btn.classList.remove('on');}
+  else{r.classList.add('hidden');btn.classList.add('on');}
 }
 
 function ds(e,t){dragType=t;e.dataTransfer.effectAllowed='copy';}
 function dropEl(e){
   e.preventDefault();
-  if(!dragType)return;
+  if(liveMode||!dragType)return;
   const r=CV.getBoundingClientRect();
   addEl(dragType,Math.round(e.clientX-r.left),Math.round(e.clientY-r.top));
   dragType=null;
 }
 
 function addEl(type,x,y){
+  if(liveMode)return;
   saveH();
   const d=DEFS[type];
   if(!d)return;
@@ -410,7 +556,7 @@ function addEl(type,x,y){
     pxs:parseFloat((px/cw).toFixed(4)),pxo:0,
     pys:parseFloat((py/ch).toFixed(4)),pyo:0,
     bg:d.bg,tc:d.tc,fs:d.fs,
-    text:d.text,name:d.name+(count||''),
+    text:d.text,name:uniqueName(d.name+(count||'')),
     z:zc++,mods:{},
     imgId:d.imgId||'rbxassetid://0',
     videoId:d.videoId||'rbxassetid://0',
@@ -420,15 +566,27 @@ function addEl(type,x,y){
     anchorX:0,anchorY:0,
     visible:true,zIndex:1,
     parentId:'__screengui__',
+    scripts:[],
+    animations:[],
+    notes:'',
   };
   els.push(el);render();select(el.id);
 }
 
+function uniqueName(base){
+  if(!base)base='Element';
+  if(!els.find(e=>e.name===base))return base;
+  let i=2;
+  while(els.find(e=>e.name===base+'_'+i))i++;
+  return base+'_'+i;
+}
+
 function addMod(m){
-  if(!sel)return;
+  if(liveMode||!sel)return;
   const el=els.find(e=>e.id===sel);
   if(!el)return;
-  if(el.mods[m]){return;}
+  if(el.mods[m])return;
+  saveH();
   el.mods[m]=JSON.parse(JSON.stringify(MODDEFS[m]||{}));
   render();showProps();
 }
@@ -511,10 +669,12 @@ function render(){
       d.appendChild(ic);
     }
 
-    const h=document.createElement('div');h.className='rh';
-    h.onmousedown=e=>{e.stopPropagation();startResize(e,el.id);};
-    d.appendChild(h);
-    d.onmousedown=e=>{if(e.button===0){e.stopPropagation();select(el.id,e.shiftKey);startMove(e,el.id);}};
+    if(!liveMode){
+      const h=document.createElement('div');h.className='rh';
+      h.onmousedown=e=>{e.stopPropagation();startResize(e,el.id);};
+      d.appendChild(h);
+      d.onmousedown=e=>{if(e.button===0){e.stopPropagation();select(el.id,e.shiftKey);startMove(e,el.id);}};
+    }
     CV.appendChild(d);
   });
 
@@ -522,6 +682,7 @@ function render(){
   genCode();
   markDirty();
   autosave();
+  if(liveMode)installLiveDrivers();
 }
 
 function aCSS(a){return a==='Left'?'flex-start':a==='Right'?'flex-end':'center';}
@@ -536,7 +697,7 @@ function renderLayers(){
   const L=document.getElementById('layers');
   L.innerHTML='';
   const sorted=[...els].sort((a,b)=>b.z-a.z);
-  sorted.forEach((el,i)=>{
+  sorted.forEach(el=>{
     const row=document.createElement('div');
     row.className='layer-row'+(el.id===sel?' on':'');
     row.dataset.id=el.id;
@@ -547,7 +708,7 @@ function renderLayers(){
       e.dataTransfer.effectAllowed='move';
       setTimeout(()=>row.style.opacity='0.4',0);
     };
-    row.ondragend=e=>{
+    row.ondragend=()=>{
       row.style.opacity='';
       layerDragId=null;
       document.querySelectorAll('.layer-row').forEach(r=>r.classList.remove('drag-over'));
@@ -563,8 +724,8 @@ function renderLayers(){
       row.classList.remove('drag-over');
       if(!layerDragId||layerDragId===el.id)return;
       saveH();
-      const dragEl=els.find(e=>e.id===layerDragId);
-      const targetEl=els.find(e=>e.id===el.id);
+      const dragEl=els.find(x=>x.id===layerDragId);
+      const targetEl=els.find(x=>x.id===el.id);
       if(!dragEl||!targetEl)return;
       const dz=dragEl.z, tz=targetEl.z;
       dragEl.z=tz; targetEl.z=dz;
@@ -573,12 +734,16 @@ function renderLayers(){
 
     const handle=document.createElement('i');
     handle.className='ti ti-grip-vertical drag-handle';
-    handle.title='Drag to reorder';
 
     const main=document.createElement('div');
     main.className='layer-main';
-    main.innerHTML=`<i class="ti ti-${LICONS[el.type]||'square'}"></i><span class="layer-name">${el.name}</span>`;
-    main.onclick=()=>select(el.id);
+    main.innerHTML=`<i class="ti ti-${LICONS[el.type]||'square'}"></i><span class="layer-name">${escHtml(el.name)}</span>`;
+    main.onclick=()=>{if(!liveMode)select(el.id);};
+
+    const tags=document.createElement('div');
+    tags.className='layer-tags';
+    if(el.animations&&el.animations.length){const t=document.createElement('div');t.className='layer-tag anim';t.title=el.animations.length+' animations';tags.appendChild(t);}
+    if(el.scripts&&el.scripts.length){const t=document.createElement('div');t.className='layer-tag code';t.title=el.scripts.length+' scripts';tags.appendChild(t);}
 
     const arrows=document.createElement('div');
     arrows.className='layer-arrows';
@@ -605,12 +770,16 @@ function renderLayers(){
     arrows.appendChild(dn);
     row.appendChild(handle);
     row.appendChild(main);
+    row.appendChild(tags);
     row.appendChild(arrows);
     L.appendChild(row);
   });
 }
 
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
 function moveLayer(id,dir){
+  if(liveMode)return;
   saveH();
   const sorted=[...els].sort((a,b)=>b.z-a.z);
   const idx=sorted.findIndex(e=>e.id===id);
@@ -621,7 +790,7 @@ function moveLayer(id,dir){
   render();
 }
 
-const TABICONS={basic:'ti-adjustments-horizontal',text:'ti-text-size',mods:'ti-puzzle',adv:'ti-settings',tween:'ti-player-play'};
+const TABICONS={basic:'ti-adjustments-horizontal',text:'ti-text-size',mods:'ti-puzzle',anim:'ti-sparkles',code:'ti-braces',adv:'ti-settings'};
 
 function showProps(){
   const el=els.find(e=>e.id===sel);
@@ -629,240 +798,432 @@ function showProps(){
   PROPS.style.display='block';
 
   const hasTxt=['TextLabel','TextButton','TextBox'].includes(el.type);
-  const tabs=hasTxt?['basic','text','mods','tween','adv']:['basic','mods','tween','adv'];
+  const tabs=hasTxt?['basic','text','mods','anim','code','adv']:['basic','mods','anim','code','adv'];
   if(!tabs.includes(proptab))proptab='basic';
 
   PTABS.innerHTML=tabs.map(t=>`<button class="ptab${proptab===t?' on':''}" onclick="setTab('${t}')"><i class="ti ${TABICONS[t]}"></i> ${t}</button>`).join('');
   PINNER.innerHTML='';
 
-  if(proptab==='basic'){
-    const parentOptions=buildParentOptions(el.id);
-    const f=(v,step='0.001')=>`<input class="pi" type="number" step="${step}" value="${v}" style="width:52px;flex:none">`;
-    PINNER.innerHTML=`
-      <div class="prow"><span class="plbl">Name</span><input class="pi" value="${el.name}" oninput="up('${el.id}','name',this.value)"></div>
-      <div class="prow"><span class="plbl">Parent</span>
-        <select class="pi" onchange="up('${el.id}','parentId',this.value)" style="font-family:'Outfit',sans-serif">
-          ${parentOptions}
-        </select>
-      </div>
-      <div style="padding:3px 12px 1px;font-size:10px;color:var(--t3);letter-spacing:.5px">SIZE &nbsp;<span style="color:var(--t3);font-size:9px">XScale, XOffset, YScale, YOffset</span></div>
-      <div class="prow" style="gap:4px">
-        <span class="plbl">X</span>
-        <input class="pi" type="number" step="0.001" value="${el.sxs}" style="width:48px;flex:none" oninput="upUdim('${el.id}','s','xs',+this.value)">
-        <input class="pi" type="number" step="1" value="${el.sxo}" style="width:48px;flex:none" oninput="upUdim('${el.id}','s','xo',+this.value)">
-        <span class="plbl" style="width:auto">Y</span>
-        <input class="pi" type="number" step="0.001" value="${el.sys}" style="width:48px;flex:none" oninput="upUdim('${el.id}','s','ys',+this.value)">
-        <input class="pi" type="number" step="1" value="${el.syo}" style="width:48px;flex:none" oninput="upUdim('${el.id}','s','yo',+this.value)">
-      </div>
-      <div style="padding:3px 12px 1px;font-size:10px;color:var(--t3);letter-spacing:.5px">POSITION &nbsp;<span style="color:var(--t3);font-size:9px">XScale, XOffset, YScale, YOffset</span></div>
-      <div class="prow" style="gap:4px">
-        <span class="plbl">X</span>
-        <input class="pi" type="number" step="0.001" value="${el.pxs}" style="width:48px;flex:none" oninput="upUdim('${el.id}','p','xs',+this.value)">
-        <input class="pi" type="number" step="1" value="${el.pxo}" style="width:48px;flex:none" oninput="upUdim('${el.id}','p','xo',+this.value)">
-        <span class="plbl" style="width:auto">Y</span>
-        <input class="pi" type="number" step="0.001" value="${el.pys}" style="width:48px;flex:none" oninput="upUdim('${el.id}','p','ys',+this.value)">
-        <input class="pi" type="number" step="1" value="${el.pyo}" style="width:48px;flex:none" oninput="upUdim('${el.id}','p','yo',+this.value)">
-      </div>
-      ${el.bg!=='transparent'?`
-      <div class="prow"><span class="plbl">BgColor</span><input type="color" class="pc" value="${el.bg==='transparent'?'#1a1a1e':el.bg}" oninput="up('${el.id}','bg',this.value)"><span class="pchex">${el.bg}</span></div>
-      <div class="prow"><span class="plbl">BgTransp.</span><input class="pi" type="number" min="0" max="1" step="0.05" value="${el.bgTrans}" oninput="up('${el.id}','bgTrans',+this.value)"></div>
-      `:''}
-      ${['ImageLabel','ImageButton'].includes(el.type)?`<div class="prow"><span class="plbl">Image ID</span><input class="pi" value="${el.imgId}" oninput="up('${el.id}','imgId',this.value)"></div>`:''}
-      ${el.type==='VideoFrame'?`<div class="prow"><span class="plbl">Video ID</span><input class="pi" value="${el.videoId}" oninput="up('${el.id}','videoId',this.value)"></div>`:''}
-    `;
-  }
-
-  if(proptab==='text'){
-    const fonts=['GothamMedium','Gotham','GothamBold','Code','RobotoMono','SourceSansPro','Legacy','Ubuntu'];
-    const aligns=['Left','Center','Right'];
-    PINNER.innerHTML=`
-      <div class="prow"><span class="plbl">Text</span><input class="pi" value="${el.text}" oninput="up('${el.id}','text',this.value)"></div>
-      <div class="prow"><span class="plbl">TextColor</span><input type="color" class="pc" value="${el.tc}" oninput="up('${el.id}','tc',this.value)"><span class="pchex">${el.tc}</span></div>
-      <div class="prow"><span class="plbl">TextSize</span><input class="pi" type="number" value="${el.fs}" oninput="up('${el.id}','fs',+this.value)"></div>
-      <div class="prow"><span class="plbl">Font</span>
-        <select class="pi" onchange="up('${el.id}','font',this.value)" style="font-family:'Outfit',sans-serif">
-          ${fonts.map(f=>`<option${el.font===f?' selected':''}>${f}</option>`).join('')}
-        </select>
-      </div>
-      <div class="prow"><span class="plbl">Alignment</span>
-        <select class="pi" onchange="up('${el.id}','textAlign',this.value)" style="font-family:'Outfit',sans-serif">
-          ${aligns.map(a=>`<option${el.textAlign===a?' selected':''}>${a}</option>`).join('')}
-        </select>
-      </div>
-      ${el.type==='TextBox'?`<div class="prow"><span class="plbl">Placeholder</span><input class="pi" value="${el.placeholder}" oninput="up('${el.id}','placeholder',this.value)"></div>`:''}
-    `;
-  }
-
-  if(proptab==='mods'){
-    let html='';
-    const mkeys=Object.keys(el.mods);
-    if(!mkeys.length)html='<div style="padding:10px 12px;font-size:12px;color:var(--t3)">No modifiers. Add from the left panel.</div>';
-    mkeys.forEach(m=>{
-      html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px 2px">
-        <span style="font-size:11px;font-weight:600;color:var(--accent);font-family:\'JetBrains Mono\',monospace">${m}</span>
-        <button style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid var(--bdr2);background:var(--bg2);color:var(--red);cursor:pointer;font-family:\'Outfit\',sans-serif" onclick="removeMod('${el.id}','${m}')">remove</button>
-      </div>`;
-      const md=el.mods[m];
-      if(m==='UICorner'){
-        html+=pr('Corner px',`<input class="pi" type="number" value="${md.CornerRadius_offset}" oninput="upm('${el.id}','${m}','CornerRadius_offset',+this.value)">`);
-        html+=pr('Scale',`<input class="pi" type="number" step="0.01" value="${md.CornerRadius_scale}" oninput="upm('${el.id}','${m}','CornerRadius_scale',+this.value)">`);
-      }
-      if(m==='UIStroke'){
-        html+=pr('Color',`<input type="color" class="pc" value="${md.Color}" oninput="upm('${el.id}','${m}','Color',this.value)"><span class="pchex">${md.Color}</span>`);
-        html+=pr('Thickness',`<input class="pi" type="number" min="0.5" step="0.5" value="${md.Thickness}" oninput="upm('${el.id}','${m}','Thickness',+this.value)">`);
-        html+=pr('Transparency',`<input class="pi" type="number" min="0" max="1" step="0.05" value="${md.Transparency}" oninput="upm('${el.id}','${m}','Transparency',+this.value)">`);
-        html+=pr('Mode',`<select class="pi" onchange="upm('${el.id}','${m}','ApplyStrokeMode',this.value)" style="font-family:'Outfit',sans-serif"><option${md.ApplyStrokeMode==='Contextual'?' selected':''}>Contextual</option><option${md.ApplyStrokeMode==='Border'?' selected':''}>Border</option></select>`);
-        html+=pr('LineJoin',`<select class="pi" onchange="upm('${el.id}','${m}','LineJoinMode',this.value)" style="font-family:'Outfit',sans-serif"><option${md.LineJoinMode==='Round'?' selected':''}>Round</option><option${md.LineJoinMode==='Miter'?' selected':''}>Miter</option><option${md.LineJoinMode==='Bevel'?' selected':''}>Bevel</option></select>`);
-      }
-      if(m==='UIPadding'){
-        html+=pr('Left',`<input class="pi" type="number" value="${md.PaddingLeft}" oninput="upm('${el.id}','${m}','PaddingLeft',+this.value)">`);
-        html+=pr('Right',`<input class="pi" type="number" value="${md.PaddingRight}" oninput="upm('${el.id}','${m}','PaddingRight',+this.value)">`);
-        html+=pr('Top',`<input class="pi" type="number" value="${md.PaddingTop}" oninput="upm('${el.id}','${m}','PaddingTop',+this.value)">`);
-        html+=pr('Bottom',`<input class="pi" type="number" value="${md.PaddingBottom}" oninput="upm('${el.id}','${m}','PaddingBottom',+this.value)">`);
-      }
-      if(m==='UIGradient'){
-        html+=pr('Color 0',`<input type="color" class="pc" value="${md.Color0}" oninput="upm('${el.id}','${m}','Color0',this.value)"><span class="pchex">${md.Color0}</span>`);
-        html+=pr('Color 1',`<input type="color" class="pc" value="${md.Color1}" oninput="upm('${el.id}','${m}','Color1',this.value)"><span class="pchex">${md.Color1}</span>`);
-        html+=pr('Rotation',`<input class="pi" type="number" min="0" max="360" value="${md.Rotation}" oninput="upm('${el.id}','${m}','Rotation',+this.value)">`);
-        html+=pr('Transp. 0',`<input class="pi" type="number" min="0" max="1" step="0.05" value="${md.Transparency0}" oninput="upm('${el.id}','${m}','Transparency0',+this.value)">`);
-        html+=pr('Transp. 1',`<input class="pi" type="number" min="0" max="1" step="0.05" value="${md.Transparency1}" oninput="upm('${el.id}','${m}','Transparency1',+this.value)">`);
-      }
-      if(m==='UIScale')html+=pr('Scale',`<input class="pi" type="number" min="0.1" step="0.1" value="${md.Scale}" oninput="upm('${el.id}','${m}','Scale',+this.value)">`);
-      if(m==='UIListLayout'){
-        html+=pr('Direction',`<select class="pi" onchange="upm('${el.id}','${m}','FillDirection',this.value)" style="font-family:'Outfit',sans-serif"><option${md.FillDirection==='Vertical'?' selected':''}>Vertical</option><option${md.FillDirection==='Horizontal'?' selected':''}>Horizontal</option></select>`);
-        html+=pr('H Align',`<select class="pi" onchange="upm('${el.id}','${m}','HorizontalAlignment',this.value)" style="font-family:'Outfit',sans-serif"><option${md.HorizontalAlignment==='Left'?' selected':''}>Left</option><option${md.HorizontalAlignment==='Center'?' selected':''}>Center</option><option${md.HorizontalAlignment==='Right'?' selected':''}>Right</option></select>`);
-        html+=pr('Padding',`<input class="pi" type="number" value="${md.Padding}" oninput="upm('${el.id}','${m}','Padding',+this.value)">`);
-      }
-      if(m==='UIGridLayout'){
-        html+=pr('Cell W',`<input class="pi" type="number" value="${md.CellSize_x_offset}" oninput="upm('${el.id}','${m}','CellSize_x_offset',+this.value)">`);
-        html+=pr('Cell H',`<input class="pi" type="number" value="${md.CellSize_y_offset}" oninput="upm('${el.id}','${m}','CellSize_y_offset',+this.value)">`);
-        html+=pr('Pad X',`<input class="pi" type="number" value="${md.CellPadding_x_offset}" oninput="upm('${el.id}','${m}','CellPadding_x_offset',+this.value)">`);
-        html+=pr('Pad Y',`<input class="pi" type="number" value="${md.CellPadding_y_offset}" oninput="upm('${el.id}','${m}','CellPadding_y_offset',+this.value)">`);
-      }
-      if(m==='UISizeConstraint'){
-        html+=pr('Min W',`<input class="pi" type="number" value="${md.MinSize_x}" oninput="upm('${el.id}','${m}','MinSize_x',+this.value)">`);
-        html+=pr('Min H',`<input class="pi" type="number" value="${md.MinSize_y}" oninput="upm('${el.id}','${m}','MinSize_y',+this.value)">`);
-        html+=pr('Max W',`<input class="pi" type="number" value="${md.MaxSize_x}" oninput="upm('${el.id}','${m}','MaxSize_x',+this.value)">`);
-        html+=pr('Max H',`<input class="pi" type="number" value="${md.MaxSize_y}" oninput="upm('${el.id}','${m}','MaxSize_y',+this.value)">`);
-      }
-      if(m==='UITextSizeConstraint'){
-        html+=pr('Min',`<input class="pi" type="number" value="${md.MinTextSize}" oninput="upm('${el.id}','${m}','MinTextSize',+this.value)">`);
-        html+=pr('Max',`<input class="pi" type="number" value="${md.MaxTextSize}" oninput="upm('${el.id}','${m}','MaxTextSize',+this.value)">`);
-      }
-      if(m==='UIAspectRatioConstraint'){
-        html+=pr('Ratio',`<input class="pi" type="number" step="0.1" min="0.1" value="${md.AspectRatio}" oninput="upm('${el.id}','${m}','AspectRatio',+this.value)">`);
-        html+=pr('DomAxis',`<select class="pi" onchange="upm('${el.id}','${m}','DominantAxis',this.value)" style="font-family:'Outfit',sans-serif"><option${md.DominantAxis==='Width'?' selected':''}>Width</option><option${md.DominantAxis==='Height'?' selected':''}>Height</option></select>`);
-      }
-      if(m==='UIPageLayout'){
-        html+=pr('TweenTime',`<input class="pi" type="number" step="0.05" value="${md.TweenTime}" oninput="upm('${el.id}','${m}','TweenTime',+this.value)">`);
-        html+=pr('AnimStyle',`<select class="pi" onchange="upm('${el.id}','${m}','AnimStyle',this.value)" style="font-family:'Outfit',sans-serif"><option${md.AnimStyle==='Slide'?' selected':''}>Slide</option><option${md.AnimStyle==='Fade'?' selected':''}>Fade</option><option${md.AnimStyle==='None'?' selected':''}>None</option></select>`);
-      }
-    });
-    PINNER.innerHTML=html;
-  }
-
-  if(proptab==='adv'){
-    PINNER.innerHTML=`
-      <div class="prow"><span class="plbl">ZIndex</span><input class="pi" type="number" value="${el.zIndex}" oninput="up('${el.id}','zIndex',+this.value)"></div>
-      <div class="prow"><span class="plbl">AnchorX</span>
-        <input class="pi" type="number" min="0" max="1" step="0.1" value="${el.anchorX}" oninput="up('${el.id}','anchorX',+this.value)">
-        <span style="font-size:11px;color:var(--t3)">Y</span>
-        <input class="pi" type="number" min="0" max="1" step="0.1" value="${el.anchorY}" oninput="up('${el.id}','anchorY',+this.value)">
-      </div>
-      <div class="prow"><span class="plbl">Visible</span>
-        <select class="pi" onchange="up('${el.id}','visible',this.value==='true')" style="font-family:'Outfit',sans-serif">
-          <option${el.visible?' selected':''} value="true">true</option>
-          <option${!el.visible?' selected':''} value="false">false</option>
-        </select>
-      </div>
-      ${el.type==='ScrollingFrame'?`
-        <div class="prow"><span class="plbl">ScrollBar</span><input class="pi" type="number" value="${el.scrollBarThickness??4}" oninput="up('${el.id}','scrollBarThickness',+this.value)"></div>
-        <div class="prow"><span class="plbl">CanvasY</span><input class="pi" type="number" value="${el.canvasSizeY??400}" oninput="up('${el.id}','canvasSizeY',+this.value)"></div>
-      `:''}
-    `;
-  }
-
-  if(proptab==='tween'){
-    const tw=el.tween||{};
-    const styles=['Linear','Quad','Cubic','Quart','Quint','Sine','Back','Bounce','Elastic','Exponential','Circular'];
-    const dirs=['In','Out','InOut'];
-    const props=['Position','Size','BackgroundColor3','BackgroundTransparency','TextColor3','TextTransparency','ImageColor3','ImageTransparency','Rotation'];
-    const enabled=tw.enabled||false;
-    const selProps=tw.props||[];
-    PINNER.innerHTML=`
-      <div class="prow">
-        <span class="plbl">Enable</span>
-        <select class="pi" onchange="upTw('${el.id}','enabled',this.value==='true')" style="font-family:'Outfit',sans-serif">
-          <option${!enabled?' selected':''} value="false">false</option>
-          <option${enabled?' selected':''} value="true">true</option>
-        </select>
-      </div>
-      <div class="prow"><span class="plbl">Time</span><input class="pi" type="number" min="0" step="0.1" value="${tw.time??0.3}" oninput="upTw('${el.id}','time',+this.value)"></div>
-      <div class="prow"><span class="plbl">EasingStyle</span>
-        <select class="pi" onchange="upTw('${el.id}','style',this.value)" style="font-family:'Outfit',sans-serif">
-          ${styles.map(s=>`<option${(tw.style||'Quad')===s?' selected':''}>${s}</option>`).join('')}
-        </select>
-      </div>
-      <div class="prow"><span class="plbl">EasingDir</span>
-        <select class="pi" onchange="upTw('${el.id}','dir',this.value)" style="font-family:'Outfit',sans-serif">
-          ${dirs.map(d=>`<option${(tw.dir||'Out')===d?' selected':''}>${d}</option>`).join('')}
-        </select>
-      </div>
-      <div class="prow"><span class="plbl">Repeat</span><input class="pi" type="number" min="0" step="1" value="${tw.repeat??0}" oninput="upTw('${el.id}','repeat',+this.value)"></div>
-      <div class="prow"><span class="plbl">Reverses</span>
-        <select class="pi" onchange="upTw('${el.id}','reverses',this.value==='true')" style="font-family:'Outfit',sans-serif">
-          <option${!(tw.reverses)?' selected':''} value="false">false</option>
-          <option${tw.reverses?' selected':''} value="true">true</option>
-        </select>
-      </div>
-      <div class="prow"><span class="plbl">Delay</span><input class="pi" type="number" min="0" step="0.05" value="${tw.delay??0}" oninput="upTw('${el.id}','delay',+this.value)"></div>
-      <div style="padding:6px 12px 3px;font-size:10px;color:var(--t3);letter-spacing:.5px">ANIMATE PROPERTIES</div>
-      <div style="padding:2px 12px 8px;display:flex;flex-direction:column;gap:3px">
-        ${props.map(p=>`
-          <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--t2);cursor:pointer;padding:2px 0">
-            <input type="checkbox" ${selProps.includes(p)?'checked':''} onchange="toggleTwProp('${el.id}','${p}',this.checked)" style="accent-color:var(--accent)">
-            ${p}
-          </label>
-        `).join('')}
-      </div>
-      <div style="padding:3px 12px 6px;font-size:10px;color:var(--t3)">Tween goal values are taken from the element's current properties at code-gen time.</div>
-    `;
-  }
-}
-
-function upTw(id,k,v){
-  const el=els.find(e=>e.id===id);if(!el)return;
-  if(!el.tween)el.tween={};
-  el.tween[k]=v;genCode();
-}
-function toggleTwProp(id,prop,checked){
-  const el=els.find(e=>e.id===id);if(!el)return;
-  if(!el.tween)el.tween={};
-  if(!el.tween.props)el.tween.props=[];
-  if(checked){if(!el.tween.props.includes(prop))el.tween.props.push(prop);}
-  else{el.tween.props=el.tween.props.filter(p=>p!==prop);}
-  genCode();
-}
-
-function buildParentOptions(selfId){
-  const containers=['Frame','ScrollingFrame','CanvasGroup','ViewportFrame'];
-  let opts=`<option value="__screengui__"${''}>ScreenGui</option>`;
-  els.forEach(e=>{
-    if(e.id===selfId)return;
-    if(!containers.includes(e.type))return;
-    const el=els.find(x=>x.id===selfId);
-    const selected=el&&el.parentId===e.id?' selected':'';
-    opts+=`<option value="${e.id}"${selected}>${e.name} (${e.type})</option>`;
-  });
-  const el=els.find(x=>x.id===selfId);
-  if(el&&el.parentId==='__screengui__'){
-    opts=opts.replace('value="__screengui__"','value="__screengui__" selected');
-  }
-  return opts;
+  if(proptab==='basic')renderBasic(el);
+  if(proptab==='text')renderText(el);
+  if(proptab==='mods')renderMods(el);
+  if(proptab==='anim')renderAnim(el);
+  if(proptab==='code')renderCode(el);
+  if(proptab==='adv')renderAdv(el);
 }
 
 function pr(lbl,ctrl){return `<div class="prow"><span class="plbl">${lbl}</span>${ctrl}</div>`;}
-function setTab(t){proptab=t;showProps();}
+
+function buildParentOptions(selfId){
+  const containers=['Frame','ScrollingFrame','CanvasGroup','ViewportFrame'];
+  const el=els.find(x=>x.id===selfId);
+  let opts='';
+  const sgSel=el&&el.parentId==='__screengui__'?' selected':'';
+  opts+=`<option value="__screengui__"${sgSel}>ScreenGui</option>`;
+  els.forEach(e=>{
+    if(e.id===selfId)return;
+    if(!containers.includes(e.type))return;
+    const s=el&&el.parentId===e.id?' selected':'';
+    opts+=`<option value="${e.id}"${s}>${escHtml(e.name)} (${e.type})</option>`;
+  });
+  return opts;
+}
+
+function renderBasic(el){
+  PINNER.innerHTML=`
+    <div class="prow"><span class="plbl">Name</span><input class="pi" value="${escHtml(el.name)}" oninput="up('${el.id}','name',this.value)"></div>
+    <div class="prow"><span class="plbl">Parent</span>
+      <select class="pi" onchange="up('${el.id}','parentId',this.value)" style="font-family:'Outfit',sans-serif">
+        ${buildParentOptions(el.id)}
+      </select>
+    </div>
+    <div style="padding:3px 12px 1px;font-size:10px;color:var(--t3);letter-spacing:.5px">SIZE &nbsp;<span style="color:var(--t3);font-size:9px">XScale, XOffset, YScale, YOffset</span></div>
+    <div class="prow" style="gap:4px">
+      <span class="plbl">X</span>
+      <input class="pi" type="number" step="0.001" value="${el.sxs}" style="width:48px;flex:none" oninput="upUdim('${el.id}','s','xs',+this.value)">
+      <input class="pi" type="number" step="1" value="${el.sxo}" style="width:48px;flex:none" oninput="upUdim('${el.id}','s','xo',+this.value)">
+      <span class="plbl" style="width:auto">Y</span>
+      <input class="pi" type="number" step="0.001" value="${el.sys}" style="width:48px;flex:none" oninput="upUdim('${el.id}','s','ys',+this.value)">
+      <input class="pi" type="number" step="1" value="${el.syo}" style="width:48px;flex:none" oninput="upUdim('${el.id}','s','yo',+this.value)">
+    </div>
+    <div style="padding:3px 12px 1px;font-size:10px;color:var(--t3);letter-spacing:.5px">POSITION &nbsp;<span style="color:var(--t3);font-size:9px">XScale, XOffset, YScale, YOffset</span></div>
+    <div class="prow" style="gap:4px">
+      <span class="plbl">X</span>
+      <input class="pi" type="number" step="0.001" value="${el.pxs}" style="width:48px;flex:none" oninput="upUdim('${el.id}','p','xs',+this.value)">
+      <input class="pi" type="number" step="1" value="${el.pxo}" style="width:48px;flex:none" oninput="upUdim('${el.id}','p','xo',+this.value)">
+      <span class="plbl" style="width:auto">Y</span>
+      <input class="pi" type="number" step="0.001" value="${el.pys}" style="width:48px;flex:none" oninput="upUdim('${el.id}','p','ys',+this.value)">
+      <input class="pi" type="number" step="1" value="${el.pyo}" style="width:48px;flex:none" oninput="upUdim('${el.id}','p','yo',+this.value)">
+    </div>
+    ${el.bg!=='transparent'?`
+    <div class="prow"><span class="plbl">BgColor</span><input type="color" class="pc" value="${el.bg==='transparent'?'#1a1a1e':el.bg}" oninput="up('${el.id}','bg',this.value)"><span class="pchex">${el.bg}</span></div>
+    <div class="prow"><span class="plbl">BgTransp.</span><input class="pi" type="number" min="0" max="1" step="0.05" value="${el.bgTrans}" oninput="up('${el.id}','bgTrans',+this.value)"></div>
+    `:''}
+    ${['ImageLabel','ImageButton'].includes(el.type)?`<div class="prow"><span class="plbl">Image ID</span><input class="pi" value="${escHtml(el.imgId)}" oninput="up('${el.id}','imgId',this.value)"></div>`:''}
+    ${el.type==='VideoFrame'?`<div class="prow"><span class="plbl">Video ID</span><input class="pi" value="${escHtml(el.videoId)}" oninput="up('${el.id}','videoId',this.value)"></div>`:''}
+  `;
+}
+
+function renderText(el){
+  const fonts=['GothamMedium','Gotham','GothamBold','Code','RobotoMono','SourceSansPro','Legacy','Ubuntu'];
+  const aligns=['Left','Center','Right'];
+  PINNER.innerHTML=`
+    <div class="prow"><span class="plbl">Text</span><input class="pi" value="${escHtml(el.text)}" oninput="up('${el.id}','text',this.value)"></div>
+    <div class="prow"><span class="plbl">TextColor</span><input type="color" class="pc" value="${el.tc}" oninput="up('${el.id}','tc',this.value)"><span class="pchex">${el.tc}</span></div>
+    <div class="prow"><span class="plbl">TextSize</span><input class="pi" type="number" value="${el.fs}" oninput="up('${el.id}','fs',+this.value)"></div>
+    <div class="prow"><span class="plbl">Font</span>
+      <select class="pi" onchange="up('${el.id}','font',this.value)" style="font-family:'Outfit',sans-serif">
+        ${fonts.map(f=>`<option${el.font===f?' selected':''}>${f}</option>`).join('')}
+      </select>
+    </div>
+    <div class="prow"><span class="plbl">Alignment</span>
+      <select class="pi" onchange="up('${el.id}','textAlign',this.value)" style="font-family:'Outfit',sans-serif">
+        ${aligns.map(a=>`<option${el.textAlign===a?' selected':''}>${a}</option>`).join('')}
+      </select>
+    </div>
+    ${el.type==='TextBox'?`<div class="prow"><span class="plbl">Placeholder</span><input class="pi" value="${escHtml(el.placeholder)}" oninput="up('${el.id}','placeholder',this.value)"></div>`:''}
+  `;
+}
+
+function renderMods(el){
+  let html='';
+  const mkeys=Object.keys(el.mods);
+  if(!mkeys.length)html='<div style="padding:10px 12px;font-size:12px;color:var(--t3)">No modifiers. Add from the left panel.</div>';
+  mkeys.forEach(m=>{
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px 2px">
+      <span style="font-size:11px;font-weight:600;color:var(--accent);font-family:'JetBrains Mono',monospace">${m}</span>
+      <button style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid var(--bdr2);background:var(--bg2);color:var(--red);cursor:pointer;font-family:'Outfit',sans-serif" onclick="removeMod('${el.id}','${m}')">remove</button>
+    </div>`;
+    const md=el.mods[m];
+    if(m==='UICorner'){
+      html+=pr('Corner px',`<input class="pi" type="number" value="${md.CornerRadius_offset}" oninput="upm('${el.id}','${m}','CornerRadius_offset',+this.value)">`);
+      html+=pr('Scale',`<input class="pi" type="number" step="0.01" value="${md.CornerRadius_scale}" oninput="upm('${el.id}','${m}','CornerRadius_scale',+this.value)">`);
+    }
+    if(m==='UIStroke'){
+      html+=pr('Color',`<input type="color" class="pc" value="${md.Color}" oninput="upm('${el.id}','${m}','Color',this.value)"><span class="pchex">${md.Color}</span>`);
+      html+=pr('Thickness',`<input class="pi" type="number" min="0.5" step="0.5" value="${md.Thickness}" oninput="upm('${el.id}','${m}','Thickness',+this.value)">`);
+      html+=pr('Transparency',`<input class="pi" type="number" min="0" max="1" step="0.05" value="${md.Transparency}" oninput="upm('${el.id}','${m}','Transparency',+this.value)">`);
+      html+=pr('Mode',`<select class="pi" onchange="upm('${el.id}','${m}','ApplyStrokeMode',this.value)" style="font-family:'Outfit',sans-serif"><option${md.ApplyStrokeMode==='Contextual'?' selected':''}>Contextual</option><option${md.ApplyStrokeMode==='Border'?' selected':''}>Border</option></select>`);
+      html+=pr('LineJoin',`<select class="pi" onchange="upm('${el.id}','${m}','LineJoinMode',this.value)" style="font-family:'Outfit',sans-serif"><option${md.LineJoinMode==='Round'?' selected':''}>Round</option><option${md.LineJoinMode==='Miter'?' selected':''}>Miter</option><option${md.LineJoinMode==='Bevel'?' selected':''}>Bevel</option></select>`);
+    }
+    if(m==='UIPadding'){
+      html+=pr('Left',`<input class="pi" type="number" value="${md.PaddingLeft}" oninput="upm('${el.id}','${m}','PaddingLeft',+this.value)">`);
+      html+=pr('Right',`<input class="pi" type="number" value="${md.PaddingRight}" oninput="upm('${el.id}','${m}','PaddingRight',+this.value)">`);
+      html+=pr('Top',`<input class="pi" type="number" value="${md.PaddingTop}" oninput="upm('${el.id}','${m}','PaddingTop',+this.value)">`);
+      html+=pr('Bottom',`<input class="pi" type="number" value="${md.PaddingBottom}" oninput="upm('${el.id}','${m}','PaddingBottom',+this.value)">`);
+    }
+    if(m==='UIGradient'){
+      html+=pr('Color 0',`<input type="color" class="pc" value="${md.Color0}" oninput="upm('${el.id}','${m}','Color0',this.value)"><span class="pchex">${md.Color0}</span>`);
+      html+=pr('Color 1',`<input type="color" class="pc" value="${md.Color1}" oninput="upm('${el.id}','${m}','Color1',this.value)"><span class="pchex">${md.Color1}</span>`);
+      html+=pr('Rotation',`<input class="pi" type="number" min="0" max="360" value="${md.Rotation}" oninput="upm('${el.id}','${m}','Rotation',+this.value)">`);
+      html+=pr('Transp. 0',`<input class="pi" type="number" min="0" max="1" step="0.05" value="${md.Transparency0}" oninput="upm('${el.id}','${m}','Transparency0',+this.value)">`);
+      html+=pr('Transp. 1',`<input class="pi" type="number" min="0" max="1" step="0.05" value="${md.Transparency1}" oninput="upm('${el.id}','${m}','Transparency1',+this.value)">`);
+    }
+    if(m==='UIScale')html+=pr('Scale',`<input class="pi" type="number" min="0.1" step="0.1" value="${md.Scale}" oninput="upm('${el.id}','${m}','Scale',+this.value)">`);
+    if(m==='UIListLayout'){
+      html+=pr('Direction',`<select class="pi" onchange="upm('${el.id}','${m}','FillDirection',this.value)" style="font-family:'Outfit',sans-serif"><option${md.FillDirection==='Vertical'?' selected':''}>Vertical</option><option${md.FillDirection==='Horizontal'?' selected':''}>Horizontal</option></select>`);
+      html+=pr('H Align',`<select class="pi" onchange="upm('${el.id}','${m}','HorizontalAlignment',this.value)" style="font-family:'Outfit',sans-serif"><option${md.HorizontalAlignment==='Left'?' selected':''}>Left</option><option${md.HorizontalAlignment==='Center'?' selected':''}>Center</option><option${md.HorizontalAlignment==='Right'?' selected':''}>Right</option></select>`);
+      html+=pr('Padding',`<input class="pi" type="number" value="${md.Padding}" oninput="upm('${el.id}','${m}','Padding',+this.value)">`);
+    }
+    if(m==='UIGridLayout'){
+      html+=pr('Cell W',`<input class="pi" type="number" value="${md.CellSize_x_offset}" oninput="upm('${el.id}','${m}','CellSize_x_offset',+this.value)">`);
+      html+=pr('Cell H',`<input class="pi" type="number" value="${md.CellSize_y_offset}" oninput="upm('${el.id}','${m}','CellSize_y_offset',+this.value)">`);
+      html+=pr('Pad X',`<input class="pi" type="number" value="${md.CellPadding_x_offset}" oninput="upm('${el.id}','${m}','CellPadding_x_offset',+this.value)">`);
+      html+=pr('Pad Y',`<input class="pi" type="number" value="${md.CellPadding_y_offset}" oninput="upm('${el.id}','${m}','CellPadding_y_offset',+this.value)">`);
+    }
+    if(m==='UISizeConstraint'){
+      html+=pr('Min W',`<input class="pi" type="number" value="${md.MinSize_x}" oninput="upm('${el.id}','${m}','MinSize_x',+this.value)">`);
+      html+=pr('Min H',`<input class="pi" type="number" value="${md.MinSize_y}" oninput="upm('${el.id}','${m}','MinSize_y',+this.value)">`);
+      html+=pr('Max W',`<input class="pi" type="number" value="${md.MaxSize_x}" oninput="upm('${el.id}','${m}','MaxSize_x',+this.value)">`);
+      html+=pr('Max H',`<input class="pi" type="number" value="${md.MaxSize_y}" oninput="upm('${el.id}','${m}','MaxSize_y',+this.value)">`);
+    }
+    if(m==='UITextSizeConstraint'){
+      html+=pr('Min',`<input class="pi" type="number" value="${md.MinTextSize}" oninput="upm('${el.id}','${m}','MinTextSize',+this.value)">`);
+      html+=pr('Max',`<input class="pi" type="number" value="${md.MaxTextSize}" oninput="upm('${el.id}','${m}','MaxTextSize',+this.value)">`);
+    }
+    if(m==='UIAspectRatioConstraint'){
+      html+=pr('Ratio',`<input class="pi" type="number" step="0.1" min="0.1" value="${md.AspectRatio}" oninput="upm('${el.id}','${m}','AspectRatio',+this.value)">`);
+      html+=pr('DomAxis',`<select class="pi" onchange="upm('${el.id}','${m}','DominantAxis',this.value)" style="font-family:'Outfit',sans-serif"><option${md.DominantAxis==='Width'?' selected':''}>Width</option><option${md.DominantAxis==='Height'?' selected':''}>Height</option></select>`);
+    }
+    if(m==='UIPageLayout'){
+      html+=pr('TweenTime',`<input class="pi" type="number" step="0.05" value="${md.TweenTime}" oninput="upm('${el.id}','${m}','TweenTime',+this.value)">`);
+      html+=pr('AnimStyle',`<select class="pi" onchange="upm('${el.id}','${m}','AnimStyle',this.value)" style="font-family:'Outfit',sans-serif"><option${md.AnimStyle==='Slide'?' selected':''}>Slide</option><option${md.AnimStyle==='Fade'?' selected':''}>Fade</option><option${md.AnimStyle==='None'?' selected':''}>None</option></select>`);
+    }
+  });
+  PINNER.innerHTML=html;
+}
+
+function renderAnim(el){
+  if(!el.animations)el.animations=[];
+  let html='';
+  html+=`<div class="rowflex" style="padding:6px 12px 4px;justify-content:space-between">
+    <span class="dimtxt">${el.animations.length} animation${el.animations.length!==1?'s':''}</span>
+    <button class="smallbtn acc" onclick="openAnimPresets('${el.id}')"><i class="ti ti-plus"></i> Add</button>
+  </div>`;
+  if(!el.animations.length){
+    html+='<div style="padding:8px 12px;font-size:12px;color:var(--t3);line-height:1.55">No animations. Add one to preview it in Live mode and generate a TweenService block.</div>';
+  }
+  el.animations.forEach((a,i)=>{
+    const def=ANIM_DEFS[a.preset]||{};
+    html+=`<div class="pcard">
+      <div class="pcard-hdr" onclick="toggleCard(this)">
+        <div class="dot${a.enabled!==false?'':' off'}"></div>
+        <span class="cname">${escHtml(a.name||def.name||a.preset)}</span>
+        <span class="badge">${escHtml(a.trigger||def.trigger||'load')}</span>
+        <i class="ti ti-chevron-down"></i>
+      </div>
+      <div class="pcard-body">
+        <div class="rowflex" style="margin-bottom:6px">
+          <input class="pi" style="flex:1" value="${escHtml(a.name||'')}" oninput="upAnim('${el.id}',${i},'name',this.value)" placeholder="name">
+        </div>
+        <div class="rowflex" style="gap:6px;margin-bottom:6px">
+          <select class="pi" style="flex:1" onchange="upAnim('${el.id}',${i},'trigger',this.value)">
+            ${['load','hover','click','loop'].map(t=>`<option value="${t}"${(a.trigger||def.trigger)===t?' selected':''}>${t}</option>`).join('')}
+          </select>
+          <input class="pi" style="width:60px" type="number" step="0.05" min="0.05" value="${a.duration??def.duration??0.3}" oninput="upAnim('${el.id}',${i},'duration',+this.value)">
+        </div>
+        <div class="rowflex" style="gap:6px;margin-bottom:6px">
+          <input class="pi" style="flex:1" value="${escHtml(a.easing||def.easing||'Quad.Out')}" oninput="upAnim('${el.id}',${i},'easing',this.value)" placeholder="Quad.Out">
+        </div>
+        <div class="rowflex" style="gap:6px">
+          <button class="smallbtn" onclick="previewAnim('${el.id}',${i})"><i class="ti ti-player-play"></i> Preview</button>
+          <button class="smallbtn dngr" onclick="delAnim('${el.id}',${i})"><i class="ti ti-trash"></i> Remove</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  PINNER.innerHTML=html;
+}
+
+function renderCode(el){
+  if(!el.scripts)el.scripts=[];
+  let html='';
+  html+=`<div class="rowflex" style="padding:6px 12px 4px;justify-content:space-between">
+    <span class="dimtxt">${el.scripts.length} script${el.scripts.length!==1?'s':''}</span>
+    <div class="rowflex">
+      <button class="smallbtn" onclick="addScript('${el.id}')"><i class="ti ti-plus"></i> Blank</button>
+      <button class="smallbtn acc" onclick="openScriptPresets('${el.id}')"><i class="ti ti-wand"></i> Preset</button>
+    </div>
+  </div>`;
+  html+=`<div class="prow"><span class="plbl">Notes</span><input class="pi" value="${escHtml(el.notes||'')}" oninput="up('${el.id}','notes',this.value)" placeholder="what should this do?"></div>`;
+  if(!el.scripts.length){
+    html+='<div style="padding:8px 12px 12px;font-size:12px;color:var(--t3);line-height:1.55">No scripts. Add one to generate <code style="background:var(--bg3);padding:1px 4px;border-radius:3px">:Connect</code> blocks in the exported Luau. Custom Luau does not run in Live preview.</div>';
+  }
+  el.scripts.forEach((s,i)=>{
+    html+=`<div class="pcard">
+      <div class="pcard-hdr" onclick="toggleCard(this)">
+        <div class="dot${s.enabled!==false?'':' off'}"></div>
+        <span class="cname">${escHtml(s.name||'script')}</span>
+        <span class="badge">${escHtml(s.trigger||'')}</span>
+        <i class="ti ti-chevron-down"></i>
+      </div>
+      <div class="pcard-body">
+        <div class="rowflex" style="margin-bottom:6px">
+          <input class="pi" style="flex:1" value="${escHtml(s.name||'')}" oninput="upScript('${el.id}',${i},'name',this.value)" placeholder="name">
+          <select class="pi" style="width:130px" onchange="upScript('${el.id}',${i},'trigger',this.value)">
+            ${buildTriggerOptions(el.type,s.trigger||'').map(t=>`<option value="${t}"${s.trigger===t?' selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>
+        ${s.trigger==='Custom'?`<input class="pi" style="margin-bottom:6px" value="${escHtml(s.customTrigger||'')}" oninput="upScript('${el.id}',${i},'customTrigger',this.value)" placeholder="CustomEventName">`:''}
+        <textarea class="scriptarea" oninput="upScript('${el.id}',${i},'body',this.value)" onkeydown="scriptTab(event)">${escHtml(s.body||'')}</textarea>
+        <div class="rowflex" style="margin-top:6px;gap:10px">
+          <label class="checkrow"><input type="checkbox" ${s.enabled!==false?'checked':''} onchange="upScript('${el.id}',${i},'enabled',this.checked)"> enabled</label>
+          <label class="checkrow"><input type="checkbox" ${s.wrapPcall?'checked':''} onchange="upScript('${el.id}',${i},'wrapPcall',this.checked)"> pcall</label>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button class="smallbtn" onclick="copyScript('${el.id}',${i})"><i class="ti ti-copy"></i></button>
+            <button class="smallbtn dngr" onclick="delScript('${el.id}',${i})"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  });
+  PINNER.innerHTML=html;
+}
+
+function buildTriggerOptions(type,current){
+  const list=(TRIGGERS[type]||TRIGGERS.default).slice();
+  if(current&&!list.includes(current))list.unshift(current);
+  return list;
+}
+
+function renderAdv(el){
+  PINNER.innerHTML=`
+    <div class="prow"><span class="plbl">ZIndex</span><input class="pi" type="number" value="${el.zIndex}" oninput="up('${el.id}','zIndex',+this.value)"></div>
+    <div class="prow"><span class="plbl">AnchorX</span>
+      <input class="pi" type="number" min="0" max="1" step="0.1" value="${el.anchorX}" oninput="up('${el.id}','anchorX',+this.value)">
+      <span style="font-size:11px;color:var(--t3)">Y</span>
+      <input class="pi" type="number" min="0" max="1" step="0.1" value="${el.anchorY}" oninput="up('${el.id}','anchorY',+this.value)">
+    </div>
+    <div class="prow"><span class="plbl">Visible</span>
+      <select class="pi" onchange="up('${el.id}','visible',this.value==='true')" style="font-family:'Outfit',sans-serif">
+        <option${el.visible?' selected':''} value="true">true</option>
+        <option${!el.visible?' selected':''} value="false">false</option>
+      </select>
+    </div>
+    ${el.type==='ScrollingFrame'?`
+      <div class="prow"><span class="plbl">ScrollBar</span><input class="pi" type="number" value="${el.scrollBarThickness??4}" oninput="up('${el.id}','scrollBarThickness',+this.value)"></div>
+      <div class="prow"><span class="plbl">CanvasY</span><input class="pi" type="number" value="${el.canvasSizeY??400}" oninput="up('${el.id}','canvasSizeY',+this.value)"></div>
+    `:''}
+  `;
+}
+
+function toggleCard(h){
+  const c=h.parentElement;
+  c.classList.toggle('collapsed');
+  const ic=h.querySelector('i.ti:last-child');
+  if(ic)ic.className='ti '+(c.classList.contains('collapsed')?'ti-chevron-right':'ti-chevron-down');
+}
+
+function scriptTab(e){
+  if(e.key==='Tab'){
+    e.preventDefault();
+    const t=e.target;
+    const s=t.selectionStart, en=t.selectionEnd;
+    t.value=t.value.slice(0,s)+'    '+t.value.slice(en);
+    t.selectionStart=t.selectionEnd=s+4;
+    t.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+}
+
+function addScript(id){
+  const el=els.find(e=>e.id===id);if(!el)return;
+  saveH();
+  if(!el.scripts)el.scripts=[];
+  el.scripts.push({id:uid(),name:'script',trigger:'MouseButton1Click',body:'print("clicked!")',enabled:true,wrapPcall:false});
+  render();showProps();
+}
+
+function upScript(id,i,k,v){
+  const el=els.find(e=>e.id===id);if(!el||!el.scripts[i])return;
+  el.scripts[i][k]=v;
+  if(k==='trigger')renderCode(el);
+  genCode();
+}
+
+function delScript(id,i){
+  const el=els.find(e=>e.id===id);if(!el)return;
+  saveH();
+  el.scripts.splice(i,1);
+  render();showProps();
+}
+
+function copyScript(id,i){
+  const el=els.find(e=>e.id===id);if(!el||!el.scripts[i])return;
+  navigator.clipboard.writeText(el.scripts[i].body||'').then(()=>toast('Script copied'));
+}
+
+function addAnim(id,preset){
+  const el=els.find(e=>e.id===id);if(!el)return;
+  const def=ANIM_DEFS[preset];if(!def)return;
+  saveH();
+  if(!el.animations)el.animations=[];
+  el.animations.push({
+    id:uid(),
+    preset,
+    name:def.name,
+    trigger:def.trigger,
+    duration:def.duration,
+    easing:def.easing,
+    enabled:true,
+  });
+  render();showProps();
+}
+
+function upAnim(id,i,k,v){
+  const el=els.find(e=>e.id===id);if(!el||!el.animations[i])return;
+  el.animations[i][k]=v;
+  genCode();
+}
+
+function delAnim(id,i){
+  const el=els.find(e=>e.id===id);if(!el)return;
+  saveH();
+  el.animations.splice(i,1);
+  render();showProps();
+}
+
+function previewAnim(id,i){
+  const el=els.find(e=>e.id===id);if(!el)return;
+  const a=el.animations[i];if(!a)return;
+  const dom=CV.querySelector(`.rbe[data-id="${id}"]`);
+  if(!dom)return;
+  playAnimDom(dom,a,el);
+}
+
+function playAnimDom(dom,a,el){
+  const def=ANIM_DEFS[a.preset];if(!def)return;
+  const dur=(a.duration??def.duration)*1000;
+  const easingCss=easingToCss(a.easing||def.easing);
+  dom.style.transition=`all ${dur}ms ${easingCss}`;
+  const k=def.kind;
+  if(k==='fade'){dom.style.opacity=String(1-(def.to??1));setTimeout(()=>{dom.style.opacity='';},dur+50);}
+  else if(k==='fade_destroy'){dom.style.opacity='0';setTimeout(()=>{dom.style.opacity='';},dur+50);}
+  else if(k==='pop'||k==='punch'){dom.style.transform=`scale(${def.to})`;setTimeout(()=>{dom.style.transform='';},dur);}
+  else if(k==='slide'){
+    const ax=def.axis==='x'?'X':'Y';
+    dom.style.transform=`translate${ax}(${def.from*100}px)`;
+    requestAnimationFrame(()=>{dom.style.transform=`translate${ax}(0px)`;});
+    setTimeout(()=>{dom.style.transform='';},dur+50);
+  }
+  else if(k==='bright'){dom.style.filter='brightness(1.15)';setTimeout(()=>{dom.style.filter='';},dur);}
+  else if(k==='glow'){dom.style.boxShadow='0 0 12px rgba(124,109,250,.7)';setTimeout(()=>{dom.style.boxShadow='';},dur);}
+  else if(k==='lift'){dom.style.transform='translateY(-2px)';setTimeout(()=>{dom.style.transform='';},dur);}
+  else if(k==='shake'){
+    let t=0;const iv=setInterval(()=>{
+      t+=1;
+      dom.style.transform=`translateX(${(Math.sin(t)*def.to).toFixed(1)}px)`;
+      if(t>10){clearInterval(iv);dom.style.transform='';}
+    },25);
+  }
+  else if(k==='flash'){dom.style.filter='brightness(1.6)';setTimeout(()=>{dom.style.filter='';},dur);}
+  else if(k==='pulse'){
+    dom.style.transition=`opacity ${dur}ms ease-in-out`;
+    let on=false;
+    const iv=setInterval(()=>{on=!on;dom.style.opacity=on?String(1-def.to):'';},dur);
+    setTimeout(()=>{clearInterval(iv);dom.style.opacity='';},dur*6);
+  }
+  else if(k==='float'){
+    let t=0;
+    const iv=setInterval(()=>{
+      t+=0.1;
+      dom.style.transform=`translateY(${(Math.sin(t)*def.to).toFixed(2)}px)`;
+    },50);
+    setTimeout(()=>{clearInterval(iv);dom.style.transform='';},dur*1000);
+  }
+}
+
+function easingToCss(e){
+  if(!e)return 'ease';
+  const s=e.split('.')[1]||'';
+  if(s==='Out')return 'cubic-bezier(0.16,1,0.3,1)';
+  if(s==='In')return 'cubic-bezier(0.7,0,0.84,0)';
+  if(s==='InOut')return 'cubic-bezier(0.65,0,0.35,1)';
+  return 'ease';
+}
+
+function up(id,k,v){
+  const el=els.find(e=>e.id===id);
+  if(!el)return;
+  if(k==='name'){
+    if(!v)v='Element';
+    const dupe=els.find(e=>e.id!==id&&e.name===v);
+    if(dupe){toast('Name already used, will be auto-suffixed','warn');}
+  }
+  el[k]=v;render();
+}
+
+function upm(id,m,k,v){const el=els.find(e=>e.id===id);if(el&&el.mods[m]){el.mods[m][k]=v;render();}}
+function removeMod(id,m){const el=els.find(e=>e.id===id);if(el){saveH();delete el.mods[m];render();showProps();}}
+
+function syncUdimFromCanvas(el){
+  const cw=cvW(),ch=cvH();
+  if(el.sxs===undefined){
+    el.sxs=parseFloat((el.w/cw).toFixed(4));el.sxo=0;
+    el.sys=parseFloat((el.h/ch).toFixed(4));el.syo=0;
+    el.pxs=parseFloat((el.x/cw).toFixed(4));el.pxo=0;
+    el.pys=parseFloat((el.y/ch).toFixed(4));el.pyo=0;
+  }
+}
 
 function upUdim(id,kind,field,val){
   const el=els.find(e=>e.id===id);
@@ -886,28 +1247,8 @@ function upUdim(id,kind,field,val){
   render();
 }
 
-function syncUdimFromCanvas(el){
-  const cw=cvW(),ch=cvH();
-  if(el.sxs===undefined){
-    el.sxs=parseFloat((el.w/cw).toFixed(4));el.sxo=0;
-    el.sys=parseFloat((el.h/ch).toFixed(4));el.syo=0;
-    el.pxs=parseFloat((el.x/cw).toFixed(4));el.pxo=0;
-    el.pys=parseFloat((el.y/ch).toFixed(4));el.pyo=0;
-  }
-}
-function up(id,k,v){
-  const el=els.find(e=>e.id===id);
-  if(!el)return;
-  if(k==='name'){
-    const dupe=els.find(e=>e.id!==id&&e.name===v);
-    if(dupe) toast('Name "'+v+'" already used by '+dupe.type,'err');
-  }
-  el[k]=v;render();
-}
-function upm(id,m,k,v){const el=els.find(e=>e.id===id);if(el&&el.mods[m]){el.mods[m][k]=v;render();}}
-function removeMod(id,m){const el=els.find(e=>e.id===id);if(el){delete el.mods[m];render();showProps();}}
-
 function startMove(e,id){
+  if(liveMode)return;
   const el=els.find(e=>e.id===id);if(!el)return;
   syncUdimFromCanvas(el);
   const cw=cvW(),ch=cvH();
@@ -933,6 +1274,7 @@ function startMove(e,id){
 }
 
 function startResize(e,id){
+  if(liveMode)return;
   const el=els.find(e=>e.id===id);if(!el)return;
   syncUdimFromCanvas(el);
   const sx=e.clientX,sy=e.clientY,sw=el.w,sh=el.h;
@@ -949,6 +1291,7 @@ function startResize(e,id){
 }
 
 function select(id,shift){
+  if(liveMode)return;
   if(shift){
     if(multiSel.has(id)){multiSel.delete(id);sel=multiSel.size?[...multiSel].at(-1):null;}
     else{multiSel.add(id);sel=id;}
@@ -958,9 +1301,10 @@ function select(id,shift){
   render();showProps();
 }
 
-function cvMD(e){if(e.target===CV){sel=null;multiSel.clear();render();PROPS.style.display='none';}}
+function cvMD(e){if(liveMode)return;if(e.target===CV){sel=null;multiSel.clear();render();PROPS.style.display='none';}}
 
 function delSel(){
+  if(liveMode)return;
   if(!sel&&!multiSel.size)return;
   saveH();
   const kill=multiSel.size>0?new Set(multiSel):new Set([sel]);
@@ -969,24 +1313,29 @@ function delSel(){
 }
 
 function dupSel(){
+  if(liveMode)return;
   const targets=multiSel.size>0?[...multiSel]:sel?[sel]:[];
   if(!targets.length)return;saveH();
   targets.forEach(id=>{
     const el=els.find(e=>e.id===id);if(!el)return;
     const c=JSON.parse(JSON.stringify(el));
-    c.id=uid();c.x+=16;c.y+=16;c.z=zc++;c.name=c.name+'_copy';
+    c.id=uid();c.x+=16;c.y+=16;c.z=zc++;c.name=uniqueName(c.name+'_copy');
     els.push(c);
   });
   render();
 }
 
-function reorder(d){const el=els.find(e=>e.id===sel);if(!el)return;el.z+=d*5;render();}
+function reorder(d){
+  if(liveMode)return;
+  const el=els.find(e=>e.id===sel);if(!el)return;
+  el.z+=d*5;render();
+}
 
 function saveH(){hist.push(JSON.stringify(els));if(hist.length>50)hist.shift();redoHist=[];}
-function undo(){if(!hist.length)return;redoHist.push(JSON.stringify(els));els=JSON.parse(hist.pop());sel=null;multiSel.clear();render();PROPS.style.display='none';}
-function redo(){if(!redoHist.length)return;hist.push(JSON.stringify(els));els=JSON.parse(redoHist.pop());sel=null;multiSel.clear();render();PROPS.style.display='none';}
+function undo(){if(liveMode)return;if(!hist.length)return;redoHist.push(JSON.stringify(els));els=JSON.parse(hist.pop());sel=null;multiSel.clear();render();PROPS.style.display='none';}
+function redo(){if(liveMode)return;if(!redoHist.length)return;hist.push(JSON.stringify(els));els=JSON.parse(redoHist.pop());sel=null;multiSel.clear();render();PROPS.style.display='none';}
 
-function showCtx(e){e.preventDefault();if(!sel)return;CTX.style.display='block';CTX.style.left=e.clientX+'px';CTX.style.top=e.clientY+'px';}
+function showCtx(e){e.preventDefault();if(liveMode||!sel)return;CTX.style.display='block';CTX.style.left=e.clientX+'px';CTX.style.top=e.clientY+'px';}
 document.addEventListener('click',()=>CTX.style.display='none');
 
 function isTyping(){
@@ -1000,7 +1349,9 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='Z'))){e.preventDefault();redo();return;}
   if((e.ctrlKey||e.metaKey)&&e.key==='d'){e.preventDefault();dupSel();return;}
   if(isTyping())return;
+  if(liveMode&&e.key!=='Escape')return;
   if(e.key==='Delete'||e.key==='Backspace'){delSel();return;}
+  if(e.key==='Escape'){if(liveMode)toggleLive();return;}
   const k=e.key.toUpperCase();
   if(k==='G'){toggleSnap();return;}
   if(k==='F')addEl('Frame');
@@ -1021,15 +1372,15 @@ function snapVal(v){
 }
 
 function setTool(t){document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));document.getElementById('tb-'+t)?.classList.add('on');}
-function clearAll(){if(!els.length)return;saveH();els=[];sel=null;render();PROPS.style.display='none';}
+function clearAll(){if(liveMode)return;if(!els.length)return;saveH();els=[];sel=null;render();PROPS.style.display='none';}
 
 let toastTimer=null;
 function toast(msg,type='ok'){
   const t=document.getElementById('toast');
   t.textContent=msg;
-  t.className='show '+(type==='err'?'err':'ok');
+  t.className='show '+(type==='err'?'err':type==='warn'?'warn':'ok');
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>t.className='',2000);
+  toastTimer=setTimeout(()=>t.className='',2200);
 }
 
 function markDirty(){
@@ -1054,6 +1405,7 @@ function getSgSettings(){
     inset:document.getElementById('sg-inset').value,
     cw:document.getElementById('cv-w').value,
     ch:document.getElementById('cv-h').value,
+    globals:document.getElementById('sg-globals').value,
   };
 }
 
@@ -1069,6 +1421,7 @@ function applySgSettings(s){
   if(s.zib)document.getElementById('sg-zib').value=s.zib;
   if(s.enabled)document.getElementById('sg-enabled').value=s.enabled;
   if(s.inset)document.getElementById('sg-inset').value=s.inset;
+  if(s.globals!==undefined)document.getElementById('sg-globals').value=s.globals;
   if(s.cw){document.getElementById('cv-w').value=s.cw;}
   if(s.ch){document.getElementById('cv-h').value=s.ch;}
   resizeCanvas();
@@ -1076,7 +1429,7 @@ function applySgSettings(s){
 
 function saveProject(){
   try{
-    const data={els:JSON.parse(JSON.stringify(els)),zc,sg:getSgSettings(),v:1};
+    const data={els:JSON.parse(JSON.stringify(els)),zc,sg:getSgSettings(),v:2};
     localStorage.setItem('rbxui_save',JSON.stringify(data));
     markClean();
     toast('Project saved');
@@ -1092,6 +1445,11 @@ function loadProject(){
     const data=JSON.parse(raw);
     saveH();
     els=data.els||[];
+    els.forEach(e=>{
+      if(!e.scripts)e.scripts=[];
+      if(!e.animations)e.animations=[];
+      if(e.notes===undefined)e.notes='';
+    });
     zc=data.zc||10;
     sel=null;
     applySgSettings(data.sg);
@@ -1107,7 +1465,7 @@ function loadProject(){
 function autosave(){
   if(!els.length)return;
   try{
-    const data={els:JSON.parse(JSON.stringify(els)),zc,sg:getSgSettings(),v:1};
+    const data={els:JSON.parse(JSON.stringify(els)),zc,sg:getSgSettings(),v:2};
     localStorage.setItem('rbxui_autosave',JSON.stringify(data));
   }catch(e){}
 }
@@ -1175,6 +1533,18 @@ function resolveParent(el,sgName){
   return p?p.name:sgName;
 }
 
+function buildVarMap(){
+  const map={};
+  const used={};
+  [...els].sort((a,b)=>a.z-b.z).forEach(el=>{
+    let n=el.name||'Element';
+    if(used[n]){let i=2;while(used[n+'_'+i])i++;n=n+'_'+i;}
+    used[n]=true;
+    map[el.id]=n;
+  });
+  return map;
+}
+
 function buildCode(){
   const sgName=document.getElementById('sg-name').value||'ScreenGui';
   const sgParent=sgParentStr();
@@ -1182,9 +1552,12 @@ function buildCode(){
   const sgZib=document.getElementById('sg-zib').value;
   const sgEnabled=document.getElementById('sg-enabled').value;
   const sgInset=document.getElementById('sg-inset').value;
+  const globals=document.getElementById('sg-globals').value||'';
+
+  const varMap=buildVarMap();
 
   const L=[];
-  L.push(`-- Auto generated by rbxui, https://heeditz.github.io/rbxui`);
+  L.push(`-- Auto generated by rbxui`);
   L.push('');
   L.push(`local ${sgName} = Instance.new("ScreenGui")`);
   L.push(`${sgName}.Name = "${sgName}"`);
@@ -1194,6 +1567,12 @@ function buildCode(){
   L.push(`${sgName}.IgnoreGuiInset = ${sgInset}`);
   L.push(`${sgName}.Parent = ${sgParent}`);
 
+  if(globals.trim()){
+    L.push('');
+    L.push('-- Global scripts');
+    L.push(globals);
+  }
+
   if(!els.length)return L.join('\n');
 
   L.push('');
@@ -1201,8 +1580,8 @@ function buildCode(){
   const sorted=[...els].sort((a,b)=>a.z-b.z);
 
   sorted.forEach(el=>{
-    const n=el.name;
-    const parentName=resolveParent(el,sgName);
+    const n=varMap[el.id];
+    const parentName=el.parentId&&el.parentId!=='__screengui__'?(varMap[el.parentId]||sgName):sgName;
     L.push(`local ${n} = Instance.new("${el.type}")`);
     L.push(`${n}.Name = "${n}"`);
     L.push(`${n}.Size = ${fmtSz(el)}`);
@@ -1220,21 +1599,21 @@ function buildCode(){
     if(!el.visible)L.push(`${n}.Visible = false`);
 
     if(['TextLabel','TextButton','TextBox'].includes(el.type)){
-      L.push(`${n}.Text = "${el.text}"`);
+      L.push(`${n}.Text = "${escLua(el.text)}"`);
       L.push(`${n}.TextColor3 = Color3.fromRGB(${toRGB(el.tc)})`);
       L.push(`${n}.TextSize = ${el.fs}`);
       L.push(`${n}.Font = Enum.Font.${el.font||'GothamMedium'}`);
       L.push(`${n}.TextXAlignment = Enum.TextXAlignment.${el.textAlign||'Center'}`);
       if(el.type!=='TextButton')L.push(`${n}.BorderSizePixel = 0`);
-      if(el.type==='TextBox'&&el.placeholder)L.push(`${n}.PlaceholderText = "${el.placeholder}"`);
+      if(el.type==='TextBox'&&el.placeholder)L.push(`${n}.PlaceholderText = "${escLua(el.placeholder)}"`);
     }
 
     if(['ImageLabel','ImageButton'].includes(el.type)){
-      L.push(`${n}.Image = "${el.imgId}"`);
+      L.push(`${n}.Image = "${escLua(el.imgId)}"`);
       L.push(`${n}.ScaleType = Enum.ScaleType.Fit`);
     }
 
-    if(el.type==='VideoFrame')L.push(`${n}.Video = "${el.videoId}"`);
+    if(el.type==='VideoFrame')L.push(`${n}.Video = "${escLua(el.videoId)}"`);
 
     if(el.type==='ScrollingFrame'){
       L.push(`${n}.ScrollBarThickness = ${el.scrollBarThickness??4}`);
@@ -1324,27 +1703,81 @@ function buildCode(){
       L.push(`${mn}.Parent = ${n}`);
     });
 
-    if(el.tween&&el.tween.enabled&&el.tween.props&&el.tween.props.length){
-      const tw=el.tween;
-      const tn=`_tween_${n}`;
-      const info=`TweenInfo.new(${tw.time??0.3}, Enum.EasingStyle.${tw.style||'Quad'}, Enum.EasingDirection.${tw.dir||'Out'}, ${tw.repeat??0}, ${tw.reverses?'true':'false'}, ${tw.delay??0})`;
-      L.push('');
-      const goals=[];
-      tw.props.forEach(p=>{
-        if(p==='Position')goals.push(`Position = ${fmtPos(el)}`);
-        else if(p==='Size')goals.push(`Size = ${fmtSz(el)}`);
-        else if(p==='BackgroundColor3')goals.push(`BackgroundColor3 = Color3.fromRGB(${toRGB(el.bg)})`);
-        else if(p==='BackgroundTransparency')goals.push(`BackgroundTransparency = ${el.bgTrans||0}`);
-        else if(p==='TextColor3')goals.push(`TextColor3 = Color3.fromRGB(${toRGB(el.tc||'#ffffff')})`);
-        else if(p==='TextTransparency')goals.push(`TextTransparency = 0`);
-        else if(p==='ImageColor3')goals.push(`ImageColor3 = Color3.fromRGB(255, 255, 255)`);
-        else if(p==='ImageTransparency')goals.push(`ImageTransparency = 0`);
-        else if(p==='Rotation')goals.push(`Rotation = 0`);
+    if(el.animations&&el.animations.length){
+      el.animations.forEach((a,idx)=>{
+        if(a.enabled===false)return;
+        const def=ANIM_DEFS[a.preset];if(!def)return;
+        const easing=(a.easing||def.easing||'Quad.Out').split('.');
+        const style=easing[0]||'Quad';
+        const dir=easing[1]||'Out';
+        const dur=a.duration??def.duration;
+        L.push('');
+        L.push(`-- Animation: ${def.name} (${a.trigger||def.trigger})`);
+        if(def.trigger==='load'||a.trigger==='load'){
+          emitAnimTween(L,n,el,def,dur,style,dir);
+        } else if(def.kind==='glow'){
+          L.push(`local _stroke_${idx}_${n} = Instance.new("UIStroke")`);
+          L.push(`_stroke_${idx}_${n}.Color = Color3.fromRGB(124, 109, 250)`);
+          L.push(`_stroke_${idx}_${n}.Thickness = 2`);
+          L.push(`_stroke_${idx}_${n}.Transparency = 1`);
+          L.push(`_stroke_${idx}_${n}.Parent = ${n}`);
+          L.push(`${n}.MouseEnter:Connect(function()`);
+          L.push(`\tTweenService:Create(_stroke_${idx}_${n}, TweenInfo.new(${dur}, Enum.EasingStyle.${style}, Enum.EasingDirection.${dir}), {Transparency = 0}):Play()`);
+          L.push(`end)`);
+          L.push(`${n}.MouseLeave:Connect(function()`);
+          L.push(`\tTweenService:Create(_stroke_${idx}_${n}, TweenInfo.new(${dur}, Enum.EasingStyle.${style}, Enum.EasingDirection.${dir}), {Transparency = 1}):Play()`);
+          L.push(`end)`);
+        } else if(a.trigger==='hover'){
+          const info=`TweenInfo.new(${dur}, Enum.EasingStyle.${style}, Enum.EasingDirection.${dir})`;
+          L.push(`${n}.MouseEnter:Connect(function()`);
+          L.push(`\tTweenService:Create(${n}, ${info}, ${animGoals(def,'on',el)}):Play()`);
+          L.push(`end)`);
+          L.push(`${n}.MouseLeave:Connect(function()`);
+          L.push(`\tTweenService:Create(${n}, ${info}, ${animGoals(def,'off',el)}):Play()`);
+          L.push(`end)`);
+        } else if(a.trigger==='click'){
+          const info=`TweenInfo.new(${dur}, Enum.EasingStyle.${style}, Enum.EasingDirection.${dir})`;
+          const evt=['TextButton','ImageButton'].includes(el.type)?'MouseButton1Click':'InputBegan';
+          L.push(`${n}.${evt}:Connect(function()`);
+          if(def.kind==='fade_destroy'){
+            L.push(`\tlocal t = TweenService:Create(${n}, ${info}, {BackgroundTransparency = 1})`);
+            L.push(`\tt.Completed:Connect(function() ${n}:Destroy() end)`);
+            L.push(`\tt:Play()`);
+          } else if(def.kind==='shake'){
+            L.push(`\tlocal origin = ${n}.Position`);
+            L.push(`\tfor i = 1, 6 do`);
+            L.push(`\t\tlocal d = (i % 2 == 0) and ${def.to} or -${def.to}`);
+            L.push(`\t\t${n}.Position = origin + UDim2.new(0, d, 0, 0)`);
+            L.push(`\t\ttask.wait(0.02)`);
+            L.push(`\tend`);
+            L.push(`\t${n}.Position = origin`);
+          } else {
+            L.push(`\tTweenService:Create(${n}, ${info}, ${animGoals(def,'on',el)}):Play()`);
+          }
+          L.push(`end)`);
+        } else if(a.trigger==='loop'){
+          const info=`TweenInfo.new(${dur}, Enum.EasingStyle.${style}, Enum.EasingDirection.${dir}, -1, true)`;
+          L.push(`TweenService:Create(${n}, ${info}, ${animGoals(def,'loop',el)}):Play()`);
+        }
       });
-      L.push(`local ${tn} = game:GetService("TweenService"):Create(${n}, ${info}, {`);
-      goals.forEach((g,i)=>L.push(`\t${g}${i<goals.length-1?',':''}`));
-      L.push(`})`);
-      L.push(`${tn}:Play()`);
+    }
+
+    if(el.scripts&&el.scripts.length){
+      el.scripts.forEach(s=>{
+        if(s.enabled===false)return;
+        const trig=s.trigger==='Custom'?(s.customTrigger||'Changed'):s.trigger;
+        L.push('');
+        L.push(`${n}.${trig}:Connect(function()`);
+        if(s.wrapPcall){
+          L.push(`\tlocal ok, err = pcall(function()`);
+          (s.body||'').split('\n').forEach(line=>L.push(`\t\t${line}`));
+          L.push(`\tend)`);
+          L.push(`\tif not ok then warn(err) end`);
+        } else {
+          (s.body||'').split('\n').forEach(line=>L.push(`\t${line}`));
+        }
+        L.push(`end)`);
+      });
     }
 
     L.push('');
@@ -1353,14 +1786,488 @@ function buildCode(){
   return L.join('\n');
 }
 
+function escLua(s){return String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n');}
+
+function animGoals(def,phase,el){
+  const k=def.kind;
+  if(k==='pop'||k==='punch'){
+    const to=phase==='off'?def.from:def.to;
+    return `{Size = UDim2.new(${(el.sxs*to).toFixed(4)}, ${Math.round(el.sxo*to)}, ${(el.sys*to).toFixed(4)}, ${Math.round(el.syo*to)})}`;
+  }
+  if(k==='fade')return `{BackgroundTransparency = ${def.to}}`;
+  if(k==='bright')return `{BackgroundColor3 = Color3.fromRGB(${toRGB(lighten(el.bg,0.15))})}`;
+  if(k==='lift'){
+    const dy=phase==='off'?0:def.to;
+    return `{Position = UDim2.new(${el.pxs}, ${el.pxo}, ${el.pys}, ${Math.round(el.pyo+dy)})}`;
+  }
+  if(k==='flash')return `{BackgroundColor3 = Color3.fromRGB(255, 255, 255)}`;
+  if(k==='pulse')return `{BackgroundTransparency = ${def.to}}`;
+  if(k==='float'){
+    const dy=phase==='loop'?def.to:0;
+    return `{Position = UDim2.new(${el.pxs}, ${el.pxo}, ${el.pys}, ${Math.round(el.pyo+dy)})}`;
+  }
+  return `{BackgroundTransparency = ${def.to||0}}`;
+}
+
+function lighten(hex,amt){
+  if(!hex||hex==='transparent')return '#ffffff';
+  hex=hex.replace('#','');
+  const n=parseInt(hex,16);
+  const r=Math.min(255,((n>>16)&255)+Math.round(255*amt));
+  const g=Math.min(255,((n>>8)&255)+Math.round(255*amt));
+  const b=Math.min(255,(n&255)+Math.round(255*amt));
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+function emitAnimTween(L,n,el,def,dur,style,dir){
+  const info=`TweenInfo.new(${dur}, Enum.EasingStyle.${style}, Enum.EasingDirection.${dir})`;
+  const k=def.kind;
+  if(k==='fade'){
+    L.push(`local _orig_${n} = ${n}.BackgroundTransparency`);
+    L.push(`${n}.BackgroundTransparency = ${def.to}`);
+    L.push(`TweenService:Create(${n}, ${info}, {BackgroundTransparency = _orig_${n}}):Play()`);
+  } else if(k==='slide'){
+    const orig=`${n}.Position`;
+    L.push(`local _orig_${n} = ${orig}`);
+    const axis=def.axis==='x'?`UDim2.new(0, ${def.from*100}, 0, 0)`:`UDim2.new(0, 0, 0, ${def.from*100})`;
+    L.push(`${n}.Position = _orig_${n} + ${axis}`);
+    L.push(`TweenService:Create(${n}, ${info}, {Position = _orig_${n}}):Play()`);
+  } else if(k==='pop'){
+    const to=def.from;
+    L.push(`local _s_${n} = UIScale_${n} or Instance.new("UIScale")`);
+    L.push(`_s_${n}.Parent = ${n}`);
+    L.push(`_s_${n}.Scale = ${to}`);
+    L.push(`TweenService:Create(_s_${n}, ${info}, {Scale = 1}):Play()`);
+  } else {
+    L.push(`${n}.BackgroundTransparency = ${def.to||0}`);
+  }
+}
+
 function genCode(){
   const raw=buildCode();
   COUT.innerHTML=raw
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\b(local|true|false|nil|and|or|not|if|then|else|end|return|function)\b/g,'<span class="kw">$1</span>')
-    .replace(/\b(Instance\.new|UDim2\.new|UDim\.new|Color3\.fromRGB|Color3\.new|Vector2\.new|ColorSequence\.new|ColorSequenceKeypoint\.new|NumberSequence\.new|NumberSequenceKeypoint\.new|Enum\.[A-Za-z.]+|game:GetService)\b/g,'<span class="fn">$1</span>')
+    .replace(/\b(local|true|false|nil|and|or|not|if|then|else|end|return|function|for|while|do|in|break)\b/g,'<span class="kw">$1</span>')
+    .replace(/\b(Instance\.new|UDim2\.new|UDim\.new|Color3\.fromRGB|Color3\.new|Vector2\.new|ColorSequence\.new|ColorSequenceKeypoint\.new|NumberSequence\.new|NumberSequenceKeypoint\.new|Enum\.[A-Za-z.]+|game:GetService|task\.\w+|TweenService:Create)\b/g,'<span class="fn">$1</span>')
     .replace(/"([^"]*)"/g,'<span class="str">"$1"</span>')
     .replace(/\b(\d+\.?\d*)\b/g,'<span class="num">$1</span>');
+}
+
+function toggleLive(){
+  liveMode=!liveMode;
+  const btn=document.getElementById('live-btn');
+  const canvas=document.getElementById('canvas');
+  if(liveMode){
+    btn.classList.add('on');
+    btn.innerHTML='<i class="ti ti-player-stop"></i> Stop';
+    canvas.classList.add('live');
+    PROPS.style.opacity='.5';
+    PROPS.style.pointerEvents='none';
+    sel=null;multiSel.clear();
+    render();
+    installLiveDrivers();
+    toast('Live preview started. Esc to exit.');
+  } else {
+    btn.classList.remove('on');
+    btn.innerHTML='<i class="ti ti-player-play"></i> Live';
+    canvas.classList.remove('live');
+    PROPS.style.opacity='';
+    PROPS.style.pointerEvents='';
+    clearLiveDrivers();
+    render();
+    toast('Live preview stopped');
+  }
+}
+
+function installLiveDrivers(){
+  clearLiveDrivers();
+  els.forEach(el=>{
+    if(!el.animations||!el.animations.length)return;
+    const dom=CV.querySelector(`.rbe[data-id="${el.id}"]`);
+    if(!dom)return;
+    el.animations.forEach(a=>{
+      if(a.enabled===false)return;
+      const def=ANIM_DEFS[a.preset];if(!def)return;
+      const trigger=a.trigger||def.trigger;
+      if(trigger==='load'){
+        setTimeout(()=>playAnimDom(dom,a,el),50);
+      } else if(trigger==='hover'){
+        const h=()=>playAnimDom(dom,a,el);
+        dom.addEventListener('mouseenter',h);
+        liveDrivers.push(()=>dom.removeEventListener('mouseenter',h));
+      } else if(trigger==='click'){
+        const h=()=>playAnimDom(dom,a,el);
+        dom.addEventListener('mousedown',h);
+        liveDrivers.push(()=>dom.removeEventListener('mousedown',h));
+      } else if(trigger==='loop'){
+        const def2=ANIM_DEFS[a.preset];
+        const dur=(a.duration??def2.duration)*1000;
+        let on=false;
+        const iv=setInterval(()=>{
+          on=!on;
+          if(def2.kind==='pulse')dom.style.opacity=on?String(1-def2.to):'';
+          else if(def2.kind==='float'){
+            dom.style.transform=on?`translateY(${def2.to}px)`:'';
+          }
+        },dur);
+        liveDrivers.push(()=>{clearInterval(iv);dom.style.opacity='';dom.style.transform='';});
+      }
+    });
+  });
+}
+
+function clearLiveDrivers(){
+  liveDrivers.forEach(fn=>{try{fn();}catch(e){}});
+  liveDrivers=[];
+  CV.querySelectorAll('.rbe').forEach(d=>{
+    d.style.transition='';
+    d.style.transform='';
+    d.style.opacity='';
+    d.style.filter='';
+    d.style.boxShadow='';
+  });
+}
+
+function openAnimPresets(id){
+  const el=els.find(e=>e.id===id);if(!el)return;
+  document.getElementById('preset-title').textContent='Animation Presets';
+  const body=document.getElementById('preset-body');
+  body.innerHTML=`<div class="preset-grid">${Object.entries(ANIM_DEFS).map(([k,v])=>`
+    <button class="preset-item" onclick="pickAnimPreset('${id}','${k}')">
+      <span class="pname">${v.name}</span>
+      <span class="pdesc">${v.desc} - ${v.trigger}</span>
+    </button>
+  `).join('')}</div>`;
+  document.getElementById('preset-modal').classList.add('on');
+}
+
+function pickAnimPreset(id,preset){
+  closePreset();
+  addAnim(id,preset);
+}
+
+function openScriptPresets(id){
+  const el=els.find(e=>e.id===id);if(!el)return;
+  document.getElementById('preset-title').textContent='Script Presets';
+  const body=document.getElementById('preset-body');
+  const valid=SCRIPT_PRESETS.filter(p=>!p.types||p.types.includes(el.type));
+  const others=els.filter(e=>e.id!==id);
+  body.innerHTML=`<div class="preset-grid">${valid.map((p,i)=>`
+    <button class="preset-item" onclick="pickScriptPreset('${id}',${SCRIPT_PRESETS.indexOf(p)})">
+      <span class="pname">${p.name}</span>
+      <span class="pdesc">${p.desc}</span>
+    </button>
+  `).join('')}</div>`;
+  document.getElementById('preset-modal').classList.add('on');
+}
+
+function pickScriptPreset(id,pIdx){
+  const el=els.find(e=>e.id===id);if(!el)return;
+  const p=SCRIPT_PRESETS[pIdx];if(!p)return;
+  let body=p.body;
+  if(p.needsTarget){
+    const others=els.filter(e=>e.id!==id);
+    if(!others.length){toast('No other elements to target','err');return;}
+    const targetName=prompt('Target element name:',others[0].name);
+    if(targetName===null)return;
+    const t=els.find(e=>e.name===targetName);
+    if(!t){toast('Element not found','err');return;}
+    body=body.replace(/TARGET/g,t.name);
+  }
+  closePreset();
+  saveH();
+  if(!el.scripts)el.scripts=[];
+  el.scripts.push({id:uid(),name:p.name,trigger:p.trigger,body,enabled:true,wrapPcall:false});
+  render();showProps();
+  toast('Preset added');
+}
+
+function closePreset(){document.getElementById('preset-modal').classList.remove('on');}
+
+function openImport(){
+  document.getElementById('import-modal').classList.add('on');
+  try{
+    const saved=localStorage.getItem('rbxui_import_last');
+    if(saved&&!document.getElementById('import-input').value)document.getElementById('import-input').value=saved;
+  }catch(e){}
+}
+
+function closeImport(){
+  try{
+    localStorage.setItem('rbxui_import_last',document.getElementById('import-input').value||'');
+  }catch(e){}
+  document.getElementById('import-modal').classList.remove('on');
+  document.getElementById('import-preview').style.display='none';
+  lastImportResult=null;
+}
+
+function scanImport(){
+  const code=document.getElementById('import-input').value||'';
+  const result=parseLuau(code);
+  lastImportResult=result;
+  const pv=document.getElementById('import-preview');
+  pv.style.display='block';
+  let html='';
+  html+=`<div class="ok">Found ${result.elements.length} element${result.elements.length!==1?'s':''}, ${result.scripts} connection${result.scripts!==1?'s':''}, ${result.animations} tween${result.animations!==1?'s':''}</div>`;
+  if(result.sgName)html+=`<div class="dim">ScreenGui: ${escHtml(result.sgName)}</div>`;
+  result.elements.forEach(e=>{
+    html+=`<div class="dim">- ${escHtml(e.name)} (${e.type})</div>`;
+  });
+  result.warnings.forEach(w=>html+=`<div class="warn">warn: ${escHtml(w)}</div>`);
+  result.errors.forEach(er=>html+=`<div class="err">error: ${escHtml(er)}</div>`);
+  pv.innerHTML=html;
+  document.getElementById('import-confirm').disabled=result.elements.length===0;
+}
+
+function doImport(){
+  if(!lastImportResult)return;
+  const mode=document.querySelector('input[name="import-mode"]:checked').value;
+  saveH();
+  if(mode==='replace'){
+    els=[];
+    zc=10;
+  }
+  const idMap={};
+  const newEls=[];
+  lastImportResult.elements.forEach(src=>{
+    const id=uid();
+    idMap[src.oldId]=id;
+    const el={
+      id,type:src.type,
+      x:Math.round(src.x),y:Math.round(src.y),
+      w:Math.round(src.w),h:Math.round(src.h),
+      sxs:src.sxs,sxo:src.sxo,sys:src.sys,syo:src.syo,
+      pxs:src.pxs,pxo:src.pxo,pys:src.pys,pyo:src.pyo,
+      bg:src.bg,tc:src.tc,fs:src.fs,
+      text:src.text,name:uniqueName(src.name),
+      z:zc++,mods:src.mods||{},
+      imgId:src.imgId||'rbxassetid://0',
+      videoId:src.videoId||'rbxassetid://0',
+      placeholder:src.placeholder||'',
+      textAlign:src.textAlign||'Center',
+      font:src.font||'GothamMedium',
+      bgTrans:src.bgTrans||0,
+      anchorX:src.anchorX||0,anchorY:src.anchorY||0,
+      visible:src.visible!==false,zIndex:src.zIndex||1,
+      parentId:'__screengui__',
+      scripts:src.scripts||[],
+      animations:src.animations||[],
+      notes:'',
+      scrollBarThickness:src.scrollBarThickness,
+      canvasSizeY:src.canvasSizeY,
+    };
+    newEls.push(el);
+  });
+  newEls.forEach(el=>{
+    if(idMap[el.parentId])el.parentId=idMap[el.parentId];
+    els.push(el);
+  });
+  if(lastImportResult.sg){
+    applySgSettings(lastImportResult.sg);
+  }
+  closeImport();
+  render();
+  toast('Imported '+newEls.length+' elements');
+}
+
+function parseLuau(code){
+  const result={elements:[],warnings:[],errors:[],scripts:0,animations:0,sgName:'ScreenGui',sg:{}};
+  if(!code||!code.trim())return result;
+
+  const lines=code.split(/\r?\n/);
+  const instVars={};
+  const propRe=/^(\w+)\.(\w+)\s*=\s*(.+?)\s*$/;
+  const instRe=/^local\s+(\w+)\s*=\s*Instance\.new\(\s*"(\w+)"\s*(?:,\s*(\w+)\s*)?\)/;
+
+  let sgVar=null;
+  let loopDepth=0;
+
+  const containers=['Frame','ScrollingFrame','CanvasGroup','ViewportFrame'];
+
+  lines.forEach((raw,i)=>{
+    const line=raw.trim();
+    if(!line||line.startsWith('--'))return;
+    if(/^for\b/.test(line))loopDepth++;
+    if(/^while\b/.test(line))loopDepth++;
+    if(/^end\b/.test(line)||/^}\s*\)?/.test(line)){if(loopDepth>0)loopDepth--;}
+
+    const im=line.match(instRe);
+    if(im){
+      const [_,v,t,parentVar]=im;
+      if(t==='ScreenGui'){
+        sgVar=v;
+        result.sgName=v;
+        return;
+      }
+      if(loopDepth>0){result.warnings.push(`Skipped dynamic instance in loop (line ${i+1}): ${v}`);return;}
+      if(!DEFS[t]&&!MODDEFS[t]){result.warnings.push(`Unknown class "${t}" (line ${i+1})`);return;}
+      if(MODDEFS[t]){
+        instVars[v]={type:t,isMod:true,parentVar:parentVar||null};
+      } else {
+        instVars[v]={type:t,isMod:false,parentVar:parentVar||null,props:{},oldId:v};
+      }
+      return;
+    }
+
+    const pm=line.match(propRe);
+    if(pm){
+      const [_,v,prop,val]=pm;
+      if(sgVar&&v===sgVar){
+        if(prop==='Name')result.sg.name=stripQuotes(val);
+        if(prop==='ResetOnSpawn')result.sg.reset=val;
+        if(prop==='ZIndexBehavior')result.sg.zib=(val.match(/\.(\w+)$/)||[,'Sibling'])[1];
+        if(prop==='Enabled')result.sg.enabled=val;
+        if(prop==='IgnoreGuiInset')result.sg.inset=val;
+        if(prop==='Parent'){
+          if(/PlayerGui|LocalPlayer/.test(val))result.sg.parent='PlayerGui';
+          else if(/StarterGui/.test(val))result.sg.parent='StarterGui';
+          else if(/CoreGui/.test(val))result.sg.parent='CoreGui';
+          else if(/gethui/.test(val))result.sg.parent='gethui';
+          else result.sg.parent='custom',result.sg.custom=val;
+        }
+        return;
+      }
+      const inst=instVars[v];
+      if(!inst)return;
+      if(inst.isMod){
+        if(prop==='Parent')inst.parentVar=val;
+        else inst.props=inst.props||{},inst.props[prop]=val;
+        return;
+      }
+      if(prop==='Parent'){inst.parentVar=val;return;}
+      inst.props[prop]=val;
+      return;
+    }
+
+    const twRe=/(\w+):Connect\(function\(\)/;
+    const connRe=/^(\w+)\.(\w+):Connect\(/;
+    const cm=line.match(connRe);
+    if(cm){
+      result.scripts++;
+      return;
+    }
+
+    if(/TweenService:Create|:Create\(/.test(line)&&/TweenInfo/.test(line)){
+      result.animations++;
+      return;
+    }
+  });
+
+  Object.entries(instVars).forEach(([v,inst])=>{
+    if(inst.isMod)return;
+    const p=inst.props||{};
+    const def=DEFS[inst.type]||DEFS.Frame;
+    const cw=480,ch=320;
+
+    const sz=parseUdim2(p.Size);
+    const pos=parseUdim2(p.Position);
+    const anchor=parseVector2(p.AnchorPoint);
+
+    const w=sz?(sz.xs*cw+sz.xo):def.w;
+    const h=sz?(sz.ys*ch+sz.yo):def.h;
+    const x=pos?(pos.xs*cw+pos.xo):60;
+    const y=pos?(pos.ys*ch+pos.yo):60;
+
+    const bg=p.BackgroundColor3?parseColor3(p.BackgroundColor3):(def.bg||'#1e1e28');
+    const tc=p.TextColor3?parseColor3(p.TextColor3):(def.tc||'#eeeef5');
+    const bgTrans=p.BackgroundTransparency!==undefined?parseFloat(p.BackgroundTransparency):(def.bg==='transparent'?1:0);
+
+    const el={
+      oldId:v,
+      type:inst.type,
+      name:p.Name?stripQuotes(p.Name):(v||inst.type),
+      x,y,w,h,
+      sxs:sz?sz.xs:parseFloat((w/cw).toFixed(4)),sxo:sz?sz.xo:0,
+      sys:sz?sz.ys:parseFloat((h/ch).toFixed(4)),syo:sz?sz.yo:0,
+      pxs:pos?pos.xs:parseFloat((x/cw).toFixed(4)),pxo:pos?pos.xo:0,
+      pys:pos?pos.ys:parseFloat((y/ch).toFixed(4)),pyo:pos?pos.yo:0,
+      bg:bgTrans>=1?'transparent':bg,
+      tc,
+      fs:p.TextSize?parseInt(p.TextSize):(def.fs||14),
+      text:p.Text?stripQuotes(p.Text):(def.text||''),
+      textAlign:p.TextXAlignment?(p.TextXAlignment.match(/\.(\w+)$/)||[,'Center'])[1]:'Center',
+      font:p.Font?(p.Font.match(/\.(\w+)$/)||[,'GothamMedium'])[1]:'GothamMedium',
+      bgTrans,
+      anchorX:anchor?anchor.x:0,
+      anchorY:anchor?anchor.y:0,
+      visible:p.Visible!==undefined?p.Visible!=='false':true,
+      zIndex:p.ZIndex?parseInt(p.ZIndex):1,
+      mods:{},
+      scripts:[],
+      animations:[],
+      imgId:p.Image?stripQuotes(p.Image):'rbxassetid://0',
+      videoId:p.Video?stripQuotes(p.Video):'rbxassetid://0',
+      placeholder:p.PlaceholderText?stripQuotes(p.PlaceholderText):'',
+      parentId:'__screengui__',
+      scrollBarThickness:p.ScrollBarThickness?parseInt(p.ScrollBarThickness):undefined,
+      canvasSizeY:p.CanvasSize?(parseUdim2(p.CanvasSize)?.yo||400):undefined,
+    };
+    if(inst.parentVar&&instVars[inst.parentVar]){
+      el.parentId=inst.parentVar;
+    }
+    result.elements.push(el);
+  });
+
+  Object.entries(instVars).forEach(([v,inst])=>{
+    if(!inst.isMod)return;
+    let hostId=null;
+    if(inst.parentVar&&instVars[inst.parentVar]){
+      hostId=inst.parentVar;
+    }
+    if(!hostId){
+      result.warnings.push(`${inst.type} has no host, skipped`);
+      return;
+    }
+    const host=result.elements.find(e=>e.oldId===hostId);
+    if(!host)return;
+    const md=JSON.parse(JSON.stringify(MODDEFS[inst.type]||{}));
+    const p=inst.props||{};
+    if(inst.type==='UICorner'&&p.CornerRadius){
+      const u=parseUdim(p.CornerRadius);
+      if(u){md.CornerRadius_scale=u.scale;md.CornerRadius_offset=u.offset;}
+    }
+    if(inst.type==='UIStroke'){
+      if(p.Color)md.Color=parseColor3(p.Color);
+      if(p.Thickness)md.Thickness=parseFloat(p.Thickness);
+      if(p.Transparency)md.Transparency=parseFloat(p.Transparency);
+      if(p.ApplyStrokeMode)md.ApplyStrokeMode=(p.ApplyStrokeMode.match(/\.(\w+)$/)||[,'Contextual'])[1];
+      if(p.LineJoinMode)md.LineJoinMode=(p.LineJoinMode.match(/\.(\w+)$/)||[,'Round'])[1];
+    }
+    if(inst.type==='UIScale'&&p.Scale)md.Scale=parseFloat(p.Scale);
+    if(inst.type==='UIGradient'){
+      if(p.Rotation)md.Rotation=parseFloat(p.Rotation);
+    }
+    host.mods[inst.type]=md;
+  });
+
+  return result;
+}
+
+function parseUdim2(str){
+  if(!str)return null;
+  const m=str.match(/UDim2\.new\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\)/);
+  if(!m)return null;
+  return {xs:parseFloat(m[1]),xo:parseFloat(m[2]),ys:parseFloat(m[3]),yo:parseFloat(m[4])};
+}
+function parseUdim(str){
+  const m=str.match(/UDim\.new\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\)/);
+  if(!m)return null;
+  return {scale:parseFloat(m[1]),offset:parseFloat(m[2])};
+}
+function parseVector2(str){
+  const m=str.match(/Vector2\.new\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\)/);
+  if(!m)return null;
+  return {x:parseFloat(m[1]),y:parseFloat(m[2])};
+}
+function parseColor3(str){
+  const m=str.match(/Color3\.fromRGB\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+  if(!m)return null;
+  return '#'+[m[1],m[2],m[3]].map(v=>parseInt(v).toString(16).padStart(2,'0')).join('');
+}
+function stripQuotes(s){
+  if(!s)return s;
+  const m=s.match(/^"([^"]*)"$/);
+  return m?m[1]:s;
 }
 
 function loadExample(){
@@ -1370,27 +2277,32 @@ function loadExample(){
     const el={id:uid(),type,x,y,w,h,
       sxs:parseFloat((w/cw).toFixed(4)),sxo:0,sys:parseFloat((h/ch).toFixed(4)),syo:0,
       pxs:parseFloat((x/cw).toFixed(4)),pxo:0,pys:parseFloat((y/ch).toFixed(4)),pyo:0,
-      bg,tc:'#eeeef5',fs:14,text:'',name:type+(els.length||''),z:zc++,mods:{},
+      bg,tc:'#eeeef5',fs:14,text:'',name:uniqueName(type+(els.length||'')),z:zc++,mods:{},
       imgId:'rbxassetid://0',videoId:'rbxassetid://0',placeholder:'',textAlign:'Center',font:'GothamMedium',
-      bgTrans:bg==='transparent'?1:0,anchorX:0,anchorY:0,visible:true,zIndex:1,parentId:'__screengui__',...extra};
+      bgTrans:bg==='transparent'?1:0,anchorX:0,anchorY:0,visible:true,zIndex:1,parentId:'__screengui__',
+      scripts:[],animations:[],notes:'',...extra};
     els.push(el);return el;
   };
-  const bg=add('Frame',120,60,240,200,'#17171f',{name:'Background'});
+  const bg=add('Frame',120,60,240,200,'#17171f',{name:uniqueName('Background')});
   bg.mods.UICorner={CornerRadius_scale:0,CornerRadius_offset:10};
   bg.mods.UIStroke={Color:'#3a3a55',Thickness:1,Transparency:0,ApplyStrokeMode:'Border',LineJoinMode:'Round'};
+  bg.animations.push({id:uid(),preset:'fade_in',name:'Fade in',trigger:'load',duration:0.4,easing:'Quad.Out',enabled:true});
 
-  const tb=add('Frame',120,60,240,38,'#7c6dfa',{name:'TitleBar'});
+  const tb=add('Frame',120,60,240,38,'#7c6dfa',{name:uniqueName('TitleBar')});
   tb.mods.UICorner={CornerRadius_scale:0,CornerRadius_offset:10};
 
-  add('TextLabel',128,66,180,26,'transparent',{name:'TitleText',text:'My Window',tc:'#ffffff',fs:14,parentId:tb.id});
-  add('TextLabel',130,110,220,40,'transparent',{name:'BodyText',text:'Are you sure about that?',tc:'#9090b0',fs:13,parentId:bg.id});
+  add('TextLabel',128,66,180,26,'transparent',{name:uniqueName('TitleText'),text:'My Window',tc:'#ffffff',fs:14,parentId:tb.id});
+  add('TextLabel',130,110,220,40,'transparent',{name:uniqueName('BodyText'),text:'Are you sure about that?',tc:'#9090b0',fs:13,parentId:bg.id});
 
-  const ok=add('TextButton',136,196,96,32,'#7c6dfa',{name:'OkBtn',text:'Confirm',tc:'#fff',fs:13,parentId:bg.id});
+  const ok=add('TextButton',136,196,96,32,'#7c6dfa',{name:uniqueName('OkBtn'),text:'Confirm',tc:'#fff',fs:13,parentId:bg.id});
   ok.mods.UICorner={CornerRadius_scale:0,CornerRadius_offset:7};
+  ok.animations.push({id:uid(),preset:'hover_grow',name:'Hover grow',trigger:'hover',duration:0.15,easing:'Quad.Out',enabled:true});
+  ok.scripts.push({id:uid(),name:'Confirm action',trigger:'MouseButton1Click',body:'print("confirmed")',enabled:true,wrapPcall:false});
 
-  const cancel=add('TextButton',244,196,104,32,'#26262f',{name:'CancelBtn',text:'Cancel',tc:'#9090aa',fs:13,parentId:bg.id});
+  const cancel=add('TextButton',244,196,104,32,'#26262f',{name:uniqueName('CancelBtn'),text:'Cancel',tc:'#9090aa',fs:13,parentId:bg.id});
   cancel.mods.UICorner={CornerRadius_scale:0,CornerRadius_offset:7};
   cancel.mods.UIStroke={Color:'#3a3a55',Thickness:1,Transparency:0,ApplyStrokeMode:'Border',LineJoinMode:'Round'};
+  cancel.scripts.push({id:uid(),name:'Close',trigger:'MouseButton1Click',body:'script.Parent.Parent:Destroy()',enabled:true,wrapPcall:false});
 
   render();
 }
@@ -1402,10 +2314,10 @@ genCode();
   const handle=document.getElementById('right-resize');
   const panel=document.getElementById('right');
   let dragging=false,startX=0,startW=0;
-  handle.addEventListener('mousedown',e=>{
+  handle.addEventListener('mousedown',()=>{
     if(panel.classList.contains('hidden'))return;
     dragging=true;
-    startX=e.clientX;
+    startX=window.event.clientX;
     startW=panel.offsetWidth;
     handle.classList.add('dragging');
     document.body.style.cursor='col-resize';
@@ -1437,7 +2349,13 @@ genCode();
     banner.innerHTML=`<span style="color:var(--t2)">Unsaved session found (${data.els.length} element${data.els.length!==1?'s':''})</span><div style="display:flex;gap:6px"><button id="recover-yes" style="flex:1;padding:5px 0;border-radius:5px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif">Restore</button><button id="recover-no" style="flex:1;padding:5px 0;border-radius:5px;border:1px solid var(--bdr2);background:var(--bg2);color:var(--t2);font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif">Discard</button></div>`;
     document.body.appendChild(banner);
     document.getElementById('recover-yes').onclick=()=>{
-      els=data.els;zc=data.zc||10;sel=null;
+      els=data.els||[];
+      els.forEach(e=>{
+        if(!e.scripts)e.scripts=[];
+        if(!e.animations)e.animations=[];
+        if(e.notes===undefined)e.notes='';
+      });
+      zc=data.zc||10;sel=null;
       applySgSettings(data.sg);
       render();PROPS.style.display='none';
       markClean();toast('Session restored');
